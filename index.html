@@ -106,6 +106,9 @@
     border-radius:4px; border:1px dashed var(--gold);
   }
   .jaib-line span{ color:var(--gold); font-weight:700; }
+  .jaib-line.baqaya-line{ background:rgba(178,58,46,0.08); border-color:var(--stamp); margin-top:-6px; }
+  .jaib-line.baqaya-line span{ color:var(--stamp); }
+  .due-note{ font-family:'Courier New',monospace; font-size:10.5px; color:var(--stamp); margin-top:2px; display:block; }
 
   .type-toggle{ display:flex; gap:8px; margin-bottom:12px; }
   .kind-toggle{ margin-top:-2px; margin-bottom:16px; }
@@ -271,6 +274,7 @@
       <div class="stamp-card total"><div class="label">Bacha</div><div class="value" id="today-bacha">Rs 0</div></div>
     </div>
     <div class="jaib-line" id="jaib-line">Jaib Kharcha (Aaj): <span id="today-jaib">Rs 0</span> — is se Bacha nahi katta</div>
+    <div class="jaib-line baqaya-line" id="baqaya-line">Kul Baqaya (kam mila hua): <span id="total-baqaya">Rs 0</span></div>
 
     <div class="type-toggle">
       <div class="type-btn active" data-type="kharcha" id="btn-type-kharcha">Kharcha</div>
@@ -293,8 +297,14 @@
           </select>
         </div>
         <div class="field">
-          <label for="amount">Amount (Rs)</label>
+          <label for="amount" id="amount-label">Amount (Rs)</label>
           <input type="number" id="amount" placeholder="0" inputmode="decimal" min="0" step="1">
+        </div>
+      </div>
+      <div class="field-row" id="full-amount-row" style="display:none">
+        <div class="field">
+          <label for="full-amount">Poora Rate (agar kam mila ho)</label>
+          <input type="number" id="full-amount" placeholder="masalan: 1500" inputmode="decimal" min="0" step="1">
         </div>
       </div>
       <div class="field-row">
@@ -439,6 +449,11 @@
   var btnKindDukaan = document.getElementById('btn-kind-dukaan');
   var btnKindJaib = document.getElementById('btn-kind-jaib');
   var jaibLine = document.getElementById('jaib-line');
+  var baqayaLine = document.getElementById('baqaya-line');
+  var totalBaqayaEl = document.getElementById('total-baqaya');
+  var fullAmountRow = document.getElementById('full-amount-row');
+  var fullAmountInput = document.getElementById('full-amount');
+  var amountLabel = document.getElementById('amount-label');
 
   var container = document.getElementById('entries-container');
   var recentList = document.getElementById('recent-list');
@@ -487,12 +502,15 @@
     btnTypeKharcha.classList.toggle('active', type === 'kharcha');
     btnTypeWasool.classList.toggle('active', type === 'wasool');
     kindToggle.style.display = type === 'kharcha' ? 'flex' : 'none';
+    fullAmountRow.style.display = type === 'wasool' ? 'flex' : 'none';
+    amountLabel.textContent = type === 'wasool' ? 'Kitna Mila (Rs)' : 'Amount (Rs)';
     fillCategoryOptions();
     if(type === 'wasool'){
       submitBtn.textContent = '+ Wasooli Add Karein';
       submitBtn.classList.remove('mode-kharcha');
       submitBtn.classList.add('mode-wasool');
     } else {
+      fullAmountInput.value = '';
       submitBtn.textContent = currentKind === 'jaib' ? '+ Jaib Kharcha Add Karein' : '+ Dukaan Kharcha Add Karein';
       submitBtn.classList.remove('mode-wasool');
       submitBtn.classList.add('mode-kharcha');
@@ -536,7 +554,7 @@
   function render(){
     var today = todayISO();
 
-    var todayWasool = 0, todayDukaan = 0, todayJaib = 0;
+    var todayWasool = 0, todayDukaan = 0, todayJaib = 0, totalBaqaya = 0;
     var byDate = {};
 
     entries.forEach(function(e){
@@ -545,6 +563,7 @@
         else if(e.kind === 'jaib') todayJaib += e.amount;
         else todayDukaan += e.amount;
       }
+      if(e.type === 'wasool' && e.due > 0) totalBaqaya += e.due;
       if(!byDate[e.date]) byDate[e.date] = [];
       byDate[e.date].push(e);
     });
@@ -553,6 +572,8 @@
     todayKharchaEl.textContent = '-' + fmt(todayDukaan);
     todayJaibEl.textContent = fmt(todayJaib);
     jaibLine.style.display = todayJaib > 0 ? 'block' : (entries.length ? 'block' : 'none');
+    totalBaqayaEl.textContent = fmt(totalBaqaya);
+    baqayaLine.style.display = totalBaqaya > 0 ? 'block' : 'none';
     var bacha = todayWasool - todayDukaan;
     todayBachaEl.textContent = (bacha < 0 ? '-' : '') + fmt(bacha);
     todayBachaEl.style.color = bacha < 0 ? 'var(--stamp)' : 'var(--wasool)';
@@ -580,8 +601,9 @@
       list.forEach(function(e, idx){
         var isW = e.type === 'wasool';
         var isJaib = !isW && e.kind === 'jaib';
+        var hasDue = isW && e.due > 0;
         html += '<div class="entry' + (isW ? ' wasool' : '') + '" data-id="' + e.id + '" style="animation-delay:' + Math.min(idx*0.04,0.4) + 's">';
-        html += '<div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div></div>';
+        html += '<div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila (poora Rs' + Math.round(e.fullAmount) + ')</span>' : '') + '</div>';
         html += '<div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div>';
         html += '<button class="del" data-id="' + e.id + '" aria-label="Delete">&times;</button>';
         html += '</div>';
@@ -625,7 +647,8 @@
     latest.forEach(function(e){
       var isW = e.type === 'wasool';
       var isJaib = !isW && e.kind === 'jaib';
-      html += '<div class="entry' + (isW ? ' wasool' : '') + '"><div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div></div><div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div></div>';
+      var hasDue = isW && e.due > 0;
+      html += '<div class="entry' + (isW ? ' wasool' : '') + '"><div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila</span>' : '') + '</div><div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div></div>';
     });
     recentList.innerHTML = html;
   }
@@ -638,22 +661,25 @@
       return;
     }
     var html = '';
-    var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
+    var grandWasool = 0, grandDukaan = 0, grandJaib = 0, grandDue = 0;
     dates.forEach(function(date){
       var list = byDate[date];
-      var dWasool = 0, dDukaan = 0, dJaib = 0;
+      var dWasool = 0, dDukaan = 0, dJaib = 0, dDue = 0;
       var byCat = {};
       list.forEach(function(e){
-        if(e.type === 'wasool'){ dWasool += e.amount; }
+        if(e.type === 'wasool'){ dWasool += e.amount; if(e.due > 0) dDue += e.due; }
         else if(e.kind === 'jaib'){ dJaib += e.amount; }
         else { dDukaan += e.amount; byCat[e.category] = (byCat[e.category] || 0) + e.amount; }
       });
-      grandWasool += dWasool; grandDukaan += dDukaan; grandJaib += dJaib;
+      grandWasool += dWasool; grandDukaan += dDukaan; grandJaib += dJaib; grandDue += dDue;
       var breakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
       var bacha = dWasool - dDukaan;
       html += '<div class="report-row">';
       html += '<div class="r-date">' + dayLabel(date) + '</div>';
       html += '<div class="r-line"><span>Wasooli</span><span class="r-wasool">+' + fmt(dWasool) + '</span></div>';
+      if(dDue > 0){
+        html += '<div class="r-line"><span>Baqaya (kam mila)</span><span style="color:var(--stamp);font-weight:700">Rs' + Math.round(dDue) + '</span></div>';
+      }
       html += '<div class="r-line"><span>Dukaan Kharcha' + (breakdown ? ' (' + escapeHtml(breakdown) + ')' : '') + '</span><span class="r-kharcha">-' + fmt(dDukaan) + '</span></div>';
       if(dJaib > 0){
         html += '<div class="r-line"><span>Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(dJaib) + '</span></div>';
@@ -666,6 +692,9 @@
     var grandBacha = grandWasool - grandDukaan;
     var gh = '';
     gh += '<div class="cg-line"><span>Kul Wasooli</span><span class="cg-wasool">+' + fmt(grandWasool) + '</span></div>';
+    if(grandDue > 0){
+      gh += '<div class="cg-line"><span>Kul Baqaya (kam mila)</span><span style="color:var(--stamp);font-weight:700">Rs' + Math.round(grandDue) + '</span></div>';
+    }
     gh += '<div class="cg-line"><span>Kul Dukaan Kharcha</span><span class="cg-kharcha">-' + fmt(grandDukaan) + '</span></div>';
     if(grandJaib > 0){
       gh += '<div class="cg-line"><span>Kul Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(grandJaib) + '</span></div>';
@@ -679,25 +708,28 @@
     entries.forEach(function(e){ if(!byDate[e.date]) byDate[e.date] = []; byDate[e.date].push(e); });
     var dates = Object.keys(byDate).sort(function(a,b){ return b.localeCompare(a); });
     var lines = ['Roz Ka Kharcha — Report', ''];
-    var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
+    var grandWasool = 0, grandDukaan = 0, grandJaib = 0, grandDue = 0;
     dates.forEach(function(date){
       var list = byDate[date];
-      var dWasool = 0, dDukaan = 0, dJaib = 0;
+      var dWasool = 0, dDukaan = 0, dJaib = 0, dDue = 0;
       var byCat = {};
       list.forEach(function(e){
-        if(e.type === 'wasool'){ dWasool += e.amount; }
+        if(e.type === 'wasool'){ dWasool += e.amount; if(e.due > 0) dDue += e.due; }
         else if(e.kind === 'jaib'){ dJaib += e.amount; }
         else { dDukaan += e.amount; byCat[e.category] = (byCat[e.category] || 0) + e.amount; }
       });
-      grandWasool += dWasool; grandDukaan += dDukaan; grandJaib += dJaib;
+      grandWasool += dWasool; grandDukaan += dDukaan; grandJaib += dJaib; grandDue += dDue;
       var breakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
-      var line = dayLabel(date) + ': Wasooli ' + fmt(dWasool) + ', Dukaan Kharcha ' + fmt(dDukaan) + (breakdown ? ' (' + breakdown + ')' : '');
+      var line = dayLabel(date) + ': Wasooli ' + fmt(dWasool);
+      if(dDue > 0) line += ' (Baqaya Rs' + Math.round(dDue) + ')';
+      line += ', Dukaan Kharcha ' + fmt(dDukaan) + (breakdown ? ' (' + breakdown + ')' : '');
       if(dJaib > 0) line += ', Jaib Kharcha ' + fmt(dJaib);
       line += ', Bacha ' + fmt(dWasool - dDukaan);
       lines.push(line);
     });
     lines.push('');
     lines.push('Kul Wasooli: ' + fmt(grandWasool));
+    if(grandDue > 0) lines.push('Kul Baqaya (kam mila): Rs' + Math.round(grandDue));
     lines.push('Kul Dukaan Kharcha: ' + fmt(grandDukaan));
     if(grandJaib > 0) lines.push('Kul Jaib Kharcha: ' + fmt(grandJaib));
     lines.push('Kul Bacha: ' + fmt(grandWasool - grandDukaan));
@@ -773,17 +805,28 @@
     }
     errorEl.style.display = 'none';
 
-    var newEntry = { id: Date.now(), amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null };
+    var due = 0, fullAmount = 0;
+    if(currentType === 'wasool'){
+      fullAmount = parseFloat(fullAmountInput.value) || 0;
+      if(fullAmount > amount) due = fullAmount - amount;
+    }
+
+    var newEntry = { id: Date.now(), amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null, due: due, fullAmount: fullAmount };
     entries.push(newEntry);
     saveEntries(entries);
     cloudSet(newEntry);
 
     amountInput.value = '';
+    fullAmountInput.value = '';
     amountInput.focus();
 
     render();
     pulseCard(todayBachaEl.closest('.stamp-card'));
-    showToast(currentType === 'wasool' ? 'Wasooli add ho gayi' : (currentKind === 'jaib' ? 'Jaib kharcha add ho gaya' : 'Dukaan kharcha add ho gaya'));
+    if(currentType === 'wasool'){
+      showToast(due > 0 ? ('Wasooli add ho gayi — Rs' + Math.round(due) + ' baaki reh gaya') : 'Wasooli add ho gayi');
+    } else {
+      showToast(currentKind === 'jaib' ? 'Jaib kharcha add ho gaya' : 'Dukaan kharcha add ho gaya');
+    }
   });
 
   amountInput.addEventListener('input', function(){ errorEl.style.display = 'none'; });
