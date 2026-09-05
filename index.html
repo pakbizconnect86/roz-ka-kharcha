@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ur-PK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Roz Ka Kharcha — Khata</title>
+<style>
+  :root{
+    --paper:#EEF3E7;
+    --paper-line:#C9D6B8;
+    --paper-line-strong:#9FB388;
+    --margin-red:#B23A2E;
+    --ink:#20301E;
+    --ink-soft:#4B5A44;
+    --stamp:#B23A2E;
+    --stamp-soft:#E7C9C4;
+    --wasool:#2E7D46;
+    --wasool-soft:#CFE7D6;
+    --gold:#8A6A2E;
+    --card-bg:#F7FAF2;
+    --shadow:0 2px 4px rgba(32,48,30,0.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size:100% 34px;
+    background-position:0 78px;
+    font-family:'Georgia','Noto Nastaliq Urdu',serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding-bottom:40px;
+    animation:pageFade .5s ease both;
+    overflow-x:hidden;
+  }
+  @keyframes pageFade{ from{opacity:0;} to{opacity:1;} }
+  @keyframes slideDown{ from{opacity:0; transform:translateY(-10px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes riseIn{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes popIn{ 0%{opacity:0; transform:scale(0.9);} 60%{opacity:1; transform:scale(1.02);} 100%{opacity:1; transform:scale(1);} }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+
+  .margin-rule{ position:fixed; top:0; bottom:0; left:36px; width:1px; background:var(--margin-red); opacity:0.35; z-index:0; }
+
+  header{
+    position:relative; z-index:1;
+    display:flex; align-items:center; gap:12px;
+    padding:16px 20px 14px 48px;
+    background:var(--paper);
+    border-bottom:2px solid var(--paper-line-strong);
+    animation:slideDown .5s ease both;
+  }
+  .menu-btn{
+    background:var(--ink); color:#F7FAF2; border:none; border-radius:4px;
+    width:38px; height:38px; font-size:18px; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; transition:transform .12s ease;
+  }
+  .menu-btn:active{ transform:scale(0.92); }
+  .header-text h1{ margin:0; font-size:22px; font-weight:700; letter-spacing:0.3px; }
+  .header-text p{ margin:2px 0 0; font-size:12px; color:var(--ink-soft); font-family:'Courier New',monospace; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:8; opacity:0; pointer-events:none; transition:opacity .25s ease; }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+
+  .side-menu{
+    position:fixed; top:0; bottom:0; left:0; width:230px;
+    background:var(--card-bg); border-right:2px solid var(--paper-line-strong);
+    z-index:9; transform:translateX(-100%); transition:transform .28s ease;
+    padding:20px 0; display:flex; flex-direction:column;
+  }
+  .side-menu.open{ transform:translateX(0); }
+  .side-menu .brand{ font-size:16px; font-weight:700; padding:0 18px 16px; border-bottom:1.5px solid var(--paper-line-strong); margin-bottom:10px; }
+  .menu-item{
+    display:flex; align-items:center; gap:10px; padding:13px 18px; font-size:15px;
+    color:var(--ink); cursor:pointer; border-left:3px solid transparent;
+    transition:background .15s ease, border-color .15s ease; font-family:'Georgia',serif;
+  }
+  .menu-item .ic{ font-family:'Courier New',monospace; font-size:15px; width:18px; text-align:center; }
+  .menu-item:active{ background:rgba(0,0,0,0.04); }
+  .menu-item.active{ background:var(--stamp-soft); border-left-color:var(--stamp); font-weight:700; }
+
+  main{ position:relative; z-index:1; padding:16px 16px 0 48px; max-width:520px; margin:0 auto; }
+
+  .view{ display:none; }
+  .view.active{ display:block; animation:riseIn .35s ease both; }
+
+  .summary-row{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+  .stamp-card{
+    flex:1 1 100px; min-width:100px; background:var(--card-bg); border:1px solid var(--paper-line-strong);
+    border-radius:4px; padding:10px 12px; box-shadow:var(--shadow); transition:transform .18s ease;
+    animation:riseIn .45s ease both;
+  }
+  .stamp-card:nth-child(1){ animation-delay:.05s; }
+  .stamp-card:nth-child(2){ animation-delay:.12s; }
+  .stamp-card:nth-child(3){ animation-delay:.19s; }
+  .stamp-card:active{ transform:scale(0.97); }
+  .stamp-card .label{ font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; }
+  .stamp-card .value{ font-size:19px; font-weight:700; color:var(--stamp); margin-top:2px; font-family:'Courier New',monospace; transition:color .2s ease; }
+  .stamp-card.wasool .value{ color:var(--wasool); }
+  .stamp-card.total .value{ color:var(--ink); }
+  .stamp-card.pulse{ animation:popIn .35s ease; }
+
+  .jaib-line{
+    font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft);
+    margin:-10px 0 14px; padding:6px 10px; background:rgba(138,106,46,0.08);
+    border-radius:4px; border:1px dashed var(--gold);
+  }
+  .jaib-line span{ color:var(--gold); font-weight:700; }
+
+  .type-toggle{ display:flex; gap:8px; margin-bottom:12px; }
+  .kind-toggle{ margin-top:-2px; margin-bottom:16px; }
+  .type-btn{
+    flex:1; text-align:center; padding:10px; border-radius:4px; cursor:pointer;
+    font-size:14px; font-weight:700; border:1.5px solid var(--paper-line-strong);
+    background:var(--card-bg); color:var(--ink-soft); transition:all .15s ease;
+  }
+  .kind-btn{ padding:8px; font-size:12.5px; }
+  .type-btn.active[data-type="kharcha"]{ background:var(--stamp); border-color:var(--stamp); color:#fff; }
+  .type-btn.active[data-type="wasool"]{ background:var(--wasool); border-color:var(--wasool); color:#fff; }
+  .kind-btn.active[data-kind="dukaan"]{ background:var(--stamp); border-color:var(--stamp); color:#fff; }
+  .kind-btn.active[data-kind="jaib"]{ background:var(--gold); border-color:var(--gold); color:#fff; }
+  .type-btn:active{ transform:scale(0.97); }
+
+  form{
+    background:var(--card-bg); border:1px solid var(--paper-line-strong);
+    border-radius:6px; padding:14px; margin-bottom:20px; box-shadow:var(--shadow);
+    animation:riseIn .5s ease both; animation-delay:.1s;
+  }
+  .field-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+  .field{ flex:1 1 120px; display:flex; flex-direction:column; }
+  .field label{ font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); margin-bottom:3px; }
+  input, select{
+    font-family:inherit; font-size:15px; padding:8px 9px; border:1px solid var(--paper-line-strong);
+    border-radius:4px; background:#fff; color:var(--ink); width:100%;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  input:focus, select:focus{ outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(138,106,46,0.18); }
+  button.add-btn{
+    width:100%; margin-top:4px; background:var(--ink); color:#F7FAF2; border:none; border-radius:4px;
+    padding:11px; font-size:15px; font-family:inherit; font-weight:700; letter-spacing:0.4px;
+    cursor:pointer; transition:transform .12s ease, background .15s ease;
+  }
+  button.add-btn.mode-wasool{ background:var(--wasool); }
+  button.add-btn.mode-kharcha{ background:var(--stamp); }
+  button.add-btn:active{ transform:scale(0.97); }
+
+  .error{ color:var(--stamp); font-size:12px; font-family:'Courier New',monospace; margin:-2px 0 8px; display:none; animation:popIn .25s ease; }
+
+  .view-title{ font-size:17px; font-weight:700; margin:2px 0 14px; }
+
+  .recent-preview{ margin-top:4px; }
+  .recent-header{ display:flex; justify-content:space-between; align-items:center; font-size:13px; color:var(--ink-soft); font-family:'Courier New',monospace; margin-bottom:8px; }
+  .view-list-link{ color:var(--gold); font-weight:700; cursor:pointer; }
+  .view-list-link:active{ opacity:0.7; }
+  .recent-empty{ text-align:center; color:var(--ink-soft); font-size:13px; padding:14px 0; }
+
+  .day-group{ margin-bottom:18px; animation:riseIn .4s ease both; }
+  .day-header{ display:flex; justify-content:space-between; align-items:baseline; border-bottom:1.5px solid var(--paper-line-strong); padding-bottom:4px; margin-bottom:6px; }
+  .day-header .day-title{ font-weight:700; font-size:15px; }
+  .day-header .day-total{ font-family:'Courier New',monospace; font-size:13px; color:var(--ink); font-weight:700; }
+  .day-header .day-total .plus{ color:var(--wasool); }
+  .day-header .day-total .minus{ color:var(--stamp); }
+
+  .entry{
+    display:flex; align-items:center; justify-content:space-between; padding:9px 2px;
+    border-bottom:1px dashed var(--paper-line-strong); animation:riseIn .35s ease both;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .entry.removing{ animation:none; transform:translateX(30px); opacity:0; transition:transform .25s ease, opacity .25s ease; }
+  .entry:active{ background:rgba(0,0,0,0.03); }
+  .entry .info{ flex:1; min-width:0; }
+  .entry .item-name{ font-size:15px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .entry .cat{ font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); background:var(--stamp-soft); display:inline-block; padding:1px 6px; border-radius:3px; margin-top:3px; }
+  .entry.wasool .cat{ background:var(--wasool-soft); }
+  .entry .amt{ font-family:'Courier New',monospace; font-size:16px; font-weight:700; color:var(--stamp); margin-left:10px; white-space:nowrap; }
+  .entry.wasool .amt{ color:var(--wasool); }
+  .entry .del{ background:none; border:none; color:var(--ink-soft); font-size:18px; cursor:pointer; padding:4px 6px 4px 10px; line-height:1; transition:color .15s ease, transform .15s ease; }
+  .entry .del:active{ color:var(--stamp); transform:scale(0.85); }
+
+  .empty{ text-align:center; padding:40px 10px; color:var(--ink-soft); font-size:14px; animation:popIn .4s ease; }
+  .empty .big{ font-size:15px; font-weight:700; color:var(--ink); margin-bottom:4px; }
+
+  footer{ text-align:center; font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); padding:20px 10px 10px 48px; position:relative; z-index:1; }
+
+  .report-header{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .report-btns{ display:flex; gap:8px; flex-wrap:wrap; }
+  .share-btn{
+    background:var(--gold); color:#fff; border:none; border-radius:4px; padding:9px 14px;
+    font-family:'Courier New',monospace; font-size:12px; font-weight:700; cursor:pointer;
+    transition:transform .12s ease, background .15s ease;
+  }
+  #screenshot-btn{ background:var(--ink); }
+  .share-btn:active{ transform:scale(0.95); }
+  #report-capture{ background:var(--paper); padding:2px 2px 4px; }
+  .capture-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:2px solid var(--paper-line-strong); padding-bottom:8px; margin-bottom:12px;
+  }
+  .capture-title{ font-size:17px; font-weight:700; color:var(--ink); }
+  .capture-date{ font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); }
+  .capture-grand{
+    margin-top:10px; padding-top:10px; border-top:2px solid var(--paper-line-strong);
+    font-family:'Courier New',monospace; font-size:13px;
+  }
+  .capture-grand .cg-line{ display:flex; justify-content:space-between; padding:2px 0; }
+  .capture-grand .cg-wasool{ color:var(--wasool); font-weight:700; }
+  .capture-grand .cg-kharcha{ color:var(--stamp); font-weight:700; }
+  .capture-grand .cg-bacha{ color:var(--ink); font-weight:700; font-size:15px; }
+  .report-row{
+    background:var(--card-bg); border:1px solid var(--paper-line-strong); border-radius:4px;
+    padding:9px 10px; margin-bottom:6px; font-family:'Courier New',monospace; font-size:12.5px;
+    animation:riseIn .35s ease both;
+  }
+  .report-row .r-date{ color:var(--ink); font-weight:700; font-family:'Georgia',serif; font-size:14px; margin-bottom:3px; }
+  .report-row .r-line{ display:flex; justify-content:space-between; padding:1px 0; }
+  .report-row .r-line span:first-child{ color:var(--ink-soft); }
+  .report-row .r-wasool{ color:var(--wasool); font-weight:700; }
+  .report-row .r-kharcha{ color:var(--stamp); font-weight:700; }
+  .report-row .r-bacha{ color:var(--ink); font-weight:700; border-top:1px dashed var(--paper-line-strong); margin-top:3px; padding-top:3px; }
+  .report-empty{ text-align:center; color:var(--ink-soft); font-size:13px; padding:14px 0; }
+
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#F7FAF2; padding:9px 16px; border-radius:5px;
+    font-size:13px; font-family:'Courier New',monospace; opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease; z-index:15;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (max-width:380px){
+    .margin-rule{ left:20px; }
+    header{ padding-left:14px; }
+    main{ padding-left:14px; padding-right:12px; }
+    footer{ padding-left:14px; }
+    .header-text h1{ font-size:19px; }
+    .stamp-card{ flex:1 1 90px; padding:8px 10px; }
+    .stamp-card .value{ font-size:16px; }
+  }
+  @media (min-width:600px){
+    main{ padding-left:56px; }
+    header{ padding-left:20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="margin-rule"></div>
+
+<div class="overlay" id="overlay"></div>
+<nav class="side-menu" id="side-menu">
+  <div class="brand">Roz Ka Kharcha</div>
+  <div class="menu-item active" data-view="add"><span class="ic">+</span> Add Karein</div>
+  <div class="menu-item" data-view="list"><span class="ic">≡</span> Kya Kya Hua</div>
+  <div class="menu-item" data-view="report"><span class="ic">▤</span> Report</div>
+</nav>
+
+<header>
+  <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+  <div class="header-text">
+    <h1>Roz Ka Kharcha</h1>
+    <p id="today-date">— khata / daily ledger —</p>
+  </div>
+</header>
+
+<main>
+
+  <div class="view active" id="view-add">
+    <div class="summary-row">
+      <div class="stamp-card wasool"><div class="label">Wasooli</div><div class="value" id="today-wasool">Rs 0</div></div>
+      <div class="stamp-card"><div class="label">Dukaan Kharcha</div><div class="value" id="today-kharcha">Rs 0</div></div>
+      <div class="stamp-card total"><div class="label">Bacha</div><div class="value" id="today-bacha">Rs 0</div></div>
+    </div>
+    <div class="jaib-line" id="jaib-line">Jaib Kharcha (Aaj): <span id="today-jaib">Rs 0</span> — is se Bacha nahi katta</div>
+
+    <div class="type-toggle">
+      <div class="type-btn active" data-type="kharcha" id="btn-type-kharcha">Kharcha</div>
+      <div class="type-btn" data-type="wasool" id="btn-type-wasool">Wasooli</div>
+    </div>
+
+    <div class="type-toggle kind-toggle" id="kind-toggle">
+      <div class="type-btn kind-btn active" data-kind="dukaan" id="btn-kind-dukaan">Dukaan Kharcha</div>
+      <div class="type-btn kind-btn" data-kind="jaib" id="btn-kind-jaib">Jaib Kharcha</div>
+    </div>
+
+    <form id="entry-form">
+      <div class="field-row">
+        <div class="field" id="category-field">
+          <label for="category">Category</label>
+          <select id="category">
+            <option value="Petrol">Petrol</option>
+            <option value="Chai">Chai</option>
+            <option value="Khana">Khana</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="amount">Amount (Rs)</label>
+          <input type="number" id="amount" placeholder="0" inputmode="decimal" min="0" step="1">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="date">Tareekh</label>
+          <input type="date" id="date">
+        </div>
+      </div>
+      <div class="error" id="form-error">Amount likhein.</div>
+      <button type="submit" class="add-btn mode-kharcha" id="submit-btn">+ Kharcha Add Karein</button>
+    </form>
+
+    <div class="recent-preview">
+      <div class="recent-header">
+        <span>Abhi Abhi Add Hua</span>
+        <span class="view-list-link" id="view-list-link">Puri List →</span>
+      </div>
+      <div id="recent-list"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-list">
+    <div class="view-title">Kya Kya Hua</div>
+    <div id="entries-container"></div>
+  </div>
+
+  <div class="view" id="view-report">
+    <div class="report-header">
+      <div class="view-title" style="margin:0">Din Ka Hisab — Report</div>
+      <div class="report-btns">
+        <button type="button" class="share-btn" id="screenshot-btn">Screenshot Lein</button>
+        <button type="button" class="share-btn" id="share-btn">Ustad Ko Bhejein</button>
+      </div>
+    </div>
+    <div id="report-capture">
+      <div class="capture-head">
+        <div class="capture-title">Roz Ka Kharcha</div>
+        <div class="capture-date" id="capture-date"></div>
+      </div>
+      <div id="report-list"></div>
+      <div class="capture-grand" id="capture-grand"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>Data sirf is device pe save hota hai (localStorage)</footer>
+
+<div class="toast" id="toast">Add ho gaya</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+(function(){
+  var STORAGE_KEY = 'rkk_entries_v2';
+  var OLD_STORAGE_KEY = 'rkk_entries_v1';
+
+  function todayISO(){
+    var d = new Date();
+    var off = d.getTimezoneOffset();
+    var local = new Date(d.getTime() - off*60000);
+    return local.toISOString().slice(0,10);
+  }
+  function loadEntries(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+      var oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
+      if(oldRaw){
+        var old = JSON.parse(oldRaw);
+        return old.map(function(e){ return { id:e.id, amount:e.amount, category:e.category, date:e.date, type:'kharcha' }; });
+      }
+      return [];
+    }catch(e){ return []; }
+  }
+  function saveEntries(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+  function fmt(n){ return 'Rs ' + Math.round(Math.abs(n)).toLocaleString('en-PK'); }
+  function dayLabel(iso){
+    var today = todayISO();
+    var d = new Date(iso + 'T00:00:00');
+    var yest = new Date(); yest.setDate(yest.getDate()-1);
+    var yestISO = new Date(yest.getTime() - yest.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    if(iso === today) return 'Aaj';
+    if(iso === yestISO) return 'Kal';
+    return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+  }
+  function escapeHtml(s){ var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  var dateInput = document.getElementById('date');
+  dateInput.value = todayISO();
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+  var form = document.getElementById('entry-form');
+  var amountInput = document.getElementById('amount');
+  var categoryInput = document.getElementById('category');
+  var categoryField = document.getElementById('category-field');
+  var errorEl = document.getElementById('form-error');
+  var submitBtn = document.getElementById('submit-btn');
+  var btnTypeKharcha = document.getElementById('btn-type-kharcha');
+  var btnTypeWasool = document.getElementById('btn-type-wasool');
+  var kindToggle = document.getElementById('kind-toggle');
+  var btnKindDukaan = document.getElementById('btn-kind-dukaan');
+  var btnKindJaib = document.getElementById('btn-kind-jaib');
+  var jaibLine = document.getElementById('jaib-line');
+
+  var container = document.getElementById('entries-container');
+  var recentList = document.getElementById('recent-list');
+  var viewListLink = document.getElementById('view-list-link');
+  var reportList = document.getElementById('report-list');
+  var shareBtn = document.getElementById('share-btn');
+  var screenshotBtn = document.getElementById('screenshot-btn');
+  var captureDate = document.getElementById('capture-date');
+  var captureGrand = document.getElementById('capture-grand');
+  var toastEl = document.getElementById('toast');
+  var todayWasoolEl = document.getElementById('today-wasool');
+  var todayKharchaEl = document.getElementById('today-kharcha');
+  var todayBachaEl = document.getElementById('today-bacha');
+  var todayJaibEl = document.getElementById('today-jaib');
+
+  var menuBtn = document.getElementById('menu-btn');
+  var sideMenu = document.getElementById('side-menu');
+  var overlay = document.getElementById('overlay');
+  var menuItems = document.querySelectorAll('.menu-item');
+  var views = document.querySelectorAll('.view');
+
+  var currentType = 'kharcha';
+  var currentKind = 'dukaan';
+  var CATS = {
+    kharcha_dukaan: ['Petrol','Chai','Khana'],
+    kharcha_jaib: ['Ghar','Zaati','Aur'],
+    wasool: ['PKG','Router']
+  };
+
+  function fillCategoryOptions(){
+    var key = currentType === 'wasool' ? 'wasool' : ('kharcha_' + currentKind);
+    var list = CATS[key];
+    categoryInput.innerHTML = list.map(function(c){ return '<option value="' + c + '">' + c + '</option>'; }).join('');
+  }
+
+  function setKind(kind){
+    currentKind = kind;
+    btnKindDukaan.classList.toggle('active', kind === 'dukaan');
+    btnKindJaib.classList.toggle('active', kind === 'jaib');
+    fillCategoryOptions();
+    submitBtn.textContent = kind === 'jaib' ? '+ Jaib Kharcha Add Karein' : '+ Dukaan Kharcha Add Karein';
+  }
+
+  function setType(type){
+    currentType = type;
+    btnTypeKharcha.classList.toggle('active', type === 'kharcha');
+    btnTypeWasool.classList.toggle('active', type === 'wasool');
+    kindToggle.style.display = type === 'kharcha' ? 'flex' : 'none';
+    fillCategoryOptions();
+    if(type === 'wasool'){
+      submitBtn.textContent = '+ Wasooli Add Karein';
+      submitBtn.classList.remove('mode-kharcha');
+      submitBtn.classList.add('mode-wasool');
+    } else {
+      submitBtn.textContent = currentKind === 'jaib' ? '+ Jaib Kharcha Add Karein' : '+ Dukaan Kharcha Add Karein';
+      submitBtn.classList.remove('mode-wasool');
+      submitBtn.classList.add('mode-kharcha');
+    }
+  }
+  btnTypeKharcha.addEventListener('click', function(){ setType('kharcha'); });
+  btnTypeWasool.addEventListener('click', function(){ setType('wasool'); });
+  btnKindDukaan.addEventListener('click', function(){ setKind('dukaan'); });
+  btnKindJaib.addEventListener('click', function(){ setKind('jaib'); });
+
+  function openMenu(){ sideMenu.classList.add('open'); overlay.classList.add('show'); }
+  function closeMenu(){ sideMenu.classList.remove('open'); overlay.classList.remove('show'); }
+  menuBtn.addEventListener('click', openMenu);
+  overlay.addEventListener('click', closeMenu);
+
+  function showView(name){
+    views.forEach(function(v){ v.classList.toggle('active', v.id === 'view-' + name); });
+    menuItems.forEach(function(m){ m.classList.toggle('active', m.getAttribute('data-view') === name); });
+    closeMenu();
+  }
+  menuItems.forEach(function(m){
+    m.addEventListener('click', function(){ showView(m.getAttribute('data-view')); });
+  });
+  viewListLink.addEventListener('click', function(){ showView('list'); });
+
+  var entries = loadEntries();
+
+  function pulseCard(el){ el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }
+
+  function render(){
+    var today = todayISO();
+
+    var todayWasool = 0, todayDukaan = 0, todayJaib = 0;
+    var byDate = {};
+
+    entries.forEach(function(e){
+      if(e.date === today){
+        if(e.type === 'wasool') todayWasool += e.amount;
+        else if(e.kind === 'jaib') todayJaib += e.amount;
+        else todayDukaan += e.amount;
+      }
+      if(!byDate[e.date]) byDate[e.date] = [];
+      byDate[e.date].push(e);
+    });
+
+    todayWasoolEl.textContent = '+' + fmt(todayWasool);
+    todayKharchaEl.textContent = '-' + fmt(todayDukaan);
+    todayJaibEl.textContent = fmt(todayJaib);
+    jaibLine.style.display = todayJaib > 0 ? 'block' : (entries.length ? 'block' : 'none');
+    var bacha = todayWasool - todayDukaan;
+    todayBachaEl.textContent = (bacha < 0 ? '-' : '') + fmt(bacha);
+    todayBachaEl.style.color = bacha < 0 ? 'var(--stamp)' : 'var(--wasool)';
+
+    var dates = Object.keys(byDate).sort(function(a,b){ return b.localeCompare(a); });
+
+    if(dates.length === 0){
+      container.innerHTML = '<div class="empty"><div class="big">Abhi tak koi entry nahi</div>"Add Karein" se pehli entry likhein.</div>';
+      renderReport(byDate, dates);
+      renderRecent();
+      return;
+    }
+
+    var html = '';
+    dates.forEach(function(date){
+      var list = byDate[date].slice().sort(function(a,b){ return b.id - a.id; });
+      var dWasool = 0, dDukaan = 0, dJaib = 0;
+      list.forEach(function(e){
+        if(e.type === 'wasool') dWasool += e.amount;
+        else if(e.kind === 'jaib') dJaib += e.amount;
+        else dDukaan += e.amount;
+      });
+      html += '<div class="day-group">';
+      html += '<div class="day-header"><span class="day-title">' + dayLabel(date) + '</span><span class="day-total"><span class="plus">+' + fmt(dWasool) + '</span> / <span class="minus">-' + fmt(dDukaan) + '</span>' + (dJaib > 0 ? ' <span style="color:var(--gold)">(Jaib -' + fmt(dJaib) + ')</span>' : '') + '</span></div>';
+      list.forEach(function(e, idx){
+        var isW = e.type === 'wasool';
+        var isJaib = !isW && e.kind === 'jaib';
+        html += '<div class="entry' + (isW ? ' wasool' : '') + '" data-id="' + e.id + '" style="animation-delay:' + Math.min(idx*0.04,0.4) + 's">';
+        html += '<div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div></div>';
+        html += '<div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div>';
+        html += '<button class="del" data-id="' + e.id + '" aria-label="Delete">&times;</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    container.innerHTML = html;
+
+    Array.prototype.forEach.call(container.querySelectorAll('.del'), function(btn){
+      btn.addEventListener('click', function(){
+        var id = Number(btn.getAttribute('data-id'));
+        var row = container.querySelector('.entry[data-id="' + id + '"]');
+        if(row){
+          row.classList.add('removing');
+          setTimeout(function(){
+            entries = entries.filter(function(e){ return e.id !== id; });
+            saveEntries(entries);
+            render();
+          }, 220);
+        } else {
+          entries = entries.filter(function(e){ return e.id !== id; });
+          saveEntries(entries);
+          render();
+        }
+      });
+    });
+
+    renderReport(byDate, dates);
+    renderRecent();
+  }
+
+  function renderRecent(){
+    var latest = entries.slice().sort(function(a,b){ return b.id - a.id; }).slice(0,3);
+    if(latest.length === 0){
+      recentList.innerHTML = '<div class="recent-empty">Koi entry nahi ho abhi.</div>';
+      return;
+    }
+    var html = '';
+    latest.forEach(function(e){
+      var isW = e.type === 'wasool';
+      var isJaib = !isW && e.kind === 'jaib';
+      html += '<div class="entry' + (isW ? ' wasool' : '') + '"><div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div></div><div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div></div>';
+    });
+    recentList.innerHTML = html;
+  }
+
+  function renderReport(byDate, dates){
+    captureDate.textContent = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+    if(dates.length === 0){
+      reportList.innerHTML = '<div class="report-empty">Report ke liye pehle kuch add karein.</div>';
+      captureGrand.innerHTML = '';
+      return;
+    }
+    var html = '';
+    var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
+    dates.forEach(function(date){
+      var list = byDate[date];
+      var dWasool = 0, dDukaan = 0, dJaib = 0;
+      var byCat = {};
+      list.forEach(function(e){
+        if(e.type === 'wasool'){ dWasool += e.amount; }
+        else if(e.kind === 'jaib'){ dJaib += e.amount; }
+        else { dDukaan += e.amount; byCat[e.category] = (byCat[e.category] || 0) + e.amount; }
+      });
+      grandWasool += dWasool; grandDukaan += dDukaan; grandJaib += dJaib;
+      var breakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
+      var bacha = dWasool - dDukaan;
+      html += '<div class="report-row">';
+      html += '<div class="r-date">' + dayLabel(date) + '</div>';
+      html += '<div class="r-line"><span>Wasooli</span><span class="r-wasool">+' + fmt(dWasool) + '</span></div>';
+      html += '<div class="r-line"><span>Dukaan Kharcha' + (breakdown ? ' (' + escapeHtml(breakdown) + ')' : '') + '</span><span class="r-kharcha">-' + fmt(dDukaan) + '</span></div>';
+      if(dJaib > 0){
+        html += '<div class="r-line"><span>Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(dJaib) + '</span></div>';
+      }
+      html += '<div class="r-line r-bacha"><span>Bacha</span><span>' + (bacha < 0 ? '-' : '') + fmt(bacha) + '</span></div>';
+      html += '</div>';
+    });
+    reportList.innerHTML = html;
+
+    var grandBacha = grandWasool - grandDukaan;
+    var gh = '';
+    gh += '<div class="cg-line"><span>Kul Wasooli</span><span class="cg-wasool">+' + fmt(grandWasool) + '</span></div>';
+    gh += '<div class="cg-line"><span>Kul Dukaan Kharcha</span><span class="cg-kharcha">-' + fmt(grandDukaan) + '</span></div>';
+    if(grandJaib > 0){
+      gh += '<div class="cg-line"><span>Kul Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(grandJaib) + '</span></div>';
+    }
+    gh += '<div class="cg-line cg-bacha"><span>Kul Bacha</span><span>' + (grandBacha < 0 ? '-' : '') + fmt(grandBacha) + '</span></div>';
+    captureGrand.innerHTML = gh;
+  }
+
+  function buildReportText(){
+    var byDate = {};
+    entries.forEach(function(e){ if(!byDate[e.date]) byDate[e.date] = []; byDate[e.date].push(e); });
+    var dates = Object.keys(byDate).sort(function(a,b){ return b.localeCompare(a); });
+    var lines = ['Roz Ka Kharcha — Report', ''];
+    var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
+    dates.forEach(function(date){
+      var list = byDate[date];
+      var dWasool = 0, dDukaan = 0, dJaib = 0;
+      var byCat = {};
+      list.forEach(function(e){
+        if(e.type === 'wasool'){ dWasool += e.amount; }
+        else if(e.kind === 'jaib'){ dJaib += e.amount; }
+        else { dDukaan += e.amount; byCat[e.category] = (byCat[e.category] || 0) + e.amount; }
+      });
+      grandWasool += dWasool; grandDukaan += dDukaan; grandJaib += dJaib;
+      var breakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
+      var line = dayLabel(date) + ': Wasooli ' + fmt(dWasool) + ', Dukaan Kharcha ' + fmt(dDukaan) + (breakdown ? ' (' + breakdown + ')' : '');
+      if(dJaib > 0) line += ', Jaib Kharcha ' + fmt(dJaib);
+      line += ', Bacha ' + fmt(dWasool - dDukaan);
+      lines.push(line);
+    });
+    lines.push('');
+    lines.push('Kul Wasooli: ' + fmt(grandWasool));
+    lines.push('Kul Dukaan Kharcha: ' + fmt(grandDukaan));
+    if(grandJaib > 0) lines.push('Kul Jaib Kharcha: ' + fmt(grandJaib));
+    lines.push('Kul Bacha: ' + fmt(grandWasool - grandDukaan));
+    return lines.join('\n');
+  }
+
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
+  }
+
+  shareBtn.addEventListener('click', function(){
+    if(entries.length === 0){ showToast('Pehle kuch add karein'); return; }
+    var text = buildReportText();
+    if(navigator.share){
+      navigator.share({ title:'Roz Ka Kharcha Report', text:text }).catch(function(){});
+    } else if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        showToast('Report copy ho gaya, ab paste kar dein');
+      }).catch(function(){ showToast('Copy nahi ho saka'); });
+    } else {
+      showToast('Copy nahi ho saka');
+    }
+  });
+
+  screenshotBtn.addEventListener('click', function(){
+    if(entries.length === 0){ showToast('Pehle kuch add karein'); return; }
+    if(typeof html2canvas === 'undefined'){
+      showToast('Screenshot tool load nahi hua, internet check karein');
+      return;
+    }
+    showToast('Screenshot ban raha hai...');
+    var target = document.getElementById('report-capture');
+    html2canvas(target, {
+      backgroundColor:'#EEF3E7',
+      scale: 2,
+      useCORS: true
+    }).then(function(canvas){
+      canvas.toBlob(function(blob){
+        if(!blob){ showToast('Screenshot nahi ban saka'); return; }
+        var fileName = 'kharcha-report-' + todayISO() + '.png';
+        var file = new File([blob], fileName, { type:'image/png' });
+
+        if(navigator.canShare && navigator.canShare({ files:[file] })){
+          navigator.share({ files:[file], title:'Roz Ka Kharcha Report' }).catch(function(){});
+        } else {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+          showToast('Screenshot save ho gaya');
+        }
+      }, 'image/png');
+    }).catch(function(){
+      showToast('Screenshot nahi ban saka');
+    });
+  });
+
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var amount = parseFloat(amountInput.value);
+    var category = categoryInput.value;
+    var date = dateInput.value || todayISO();
+
+    if(!amount || amount <= 0 || isNaN(amount)){
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+
+    entries.push({ id: Date.now(), amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null });
+    saveEntries(entries);
+
+    amountInput.value = '';
+    amountInput.focus();
+
+    render();
+    pulseCard(todayBachaEl.closest('.stamp-card'));
+    showToast(currentType === 'wasool' ? 'Wasooli add ho gayi' : (currentKind === 'jaib' ? 'Jaib kharcha add ho gaya' : 'Dukaan kharcha add ho gaya'));
+  });
+
+  amountInput.addEventListener('input', function(){ errorEl.style.display = 'none'; });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
