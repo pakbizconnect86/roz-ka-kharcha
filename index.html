@@ -341,15 +341,56 @@
 
 </main>
 
-<footer>Data sirf is device pe save hota hai (localStorage)</footer>
+<footer>Data cloud (Firebase) pe save hota hai — sab device pe sync</footer>
 
 <div class="toast" id="toast">Add ho gaya</div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 (function(){
   var STORAGE_KEY = 'rkk_entries_v2';
   var OLD_STORAGE_KEY = 'rkk_entries_v1';
+  var COLLECTION = 'roz_kharcha_entries';
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyBf-Pqipw_m8TfFmwSXOqEM9nmesVs4QcM",
+    authDomain: "taskyaar-a925b.firebaseapp.com",
+    projectId: "taskyaar-a925b",
+    storageBucket: "taskyaar-a925b.firebasestorage.app",
+    messagingSenderId: "396863993634",
+    appId: "1:396863993634:web:73119b1a64290e8be1977b"
+  };
+
+  var db = null, cloudReady = false;
+  try{
+    if(typeof firebase !== 'undefined'){
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      try{ db.enablePersistence({ synchronizeTabs:true }); }catch(e){}
+      cloudReady = true;
+    }
+  }catch(e){ cloudReady = false; }
+
+  function cloudSet(entry){
+    if(!cloudReady) return;
+    db.collection(COLLECTION).doc(String(entry.id)).set(entry).catch(function(){});
+  }
+  function cloudDelete(id){
+    if(!cloudReady) return;
+    db.collection(COLLECTION).doc(String(id)).delete().catch(function(){});
+  }
+  function subscribeCloud(){
+    if(!cloudReady) return;
+    db.collection(COLLECTION).onSnapshot(function(snapshot){
+      var list = [];
+      snapshot.forEach(function(doc){ list.push(doc.data()); });
+      entries = list;
+      saveEntries(entries);
+      render();
+    }, function(){ /* offline or blocked - keep using local cache */ });
+  }
 
   function todayISO(){
     var d = new Date();
@@ -479,6 +520,17 @@
 
   var entries = loadEntries();
 
+  if(cloudReady){
+    db.collection(COLLECTION).get().then(function(snapshot){
+      if(snapshot.empty && entries.length > 0){
+        var batch = db.batch();
+        entries.forEach(function(e){ batch.set(db.collection(COLLECTION).doc(String(e.id)), e); });
+        batch.commit().catch(function(){});
+      }
+      subscribeCloud();
+    }).catch(function(){ subscribeCloud(); });
+  }
+
   function pulseCard(el){ el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }
 
   function render(){
@@ -547,11 +599,13 @@
           setTimeout(function(){
             entries = entries.filter(function(e){ return e.id !== id; });
             saveEntries(entries);
+            cloudDelete(id);
             render();
           }, 220);
         } else {
           entries = entries.filter(function(e){ return e.id !== id; });
           saveEntries(entries);
+          cloudDelete(id);
           render();
         }
       });
@@ -719,8 +773,10 @@
     }
     errorEl.style.display = 'none';
 
-    entries.push({ id: Date.now(), amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null });
+    var newEntry = { id: Date.now(), amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null };
+    entries.push(newEntry);
     saveEntries(entries);
+    cloudSet(newEntry);
 
     amountInput.value = '';
     amountInput.focus();
