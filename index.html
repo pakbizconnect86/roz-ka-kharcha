@@ -109,6 +109,7 @@
   .jaib-line.baqaya-line{ background:rgba(178,58,46,0.08); border-color:var(--stamp); margin-top:-6px; }
   .jaib-line.baqaya-line span{ color:var(--stamp); }
   .due-note{ font-family:'Courier New',monospace; font-size:10.5px; color:var(--stamp); margin-top:2px; display:block; }
+  .note-text{ font-family:'Georgia',serif; font-size:12px; color:var(--ink-soft); margin-top:2px; display:block; font-style:italic; }
 
   .type-toggle{ display:flex; gap:8px; margin-bottom:12px; }
   .kind-toggle{ margin-top:-2px; margin-bottom:16px; }
@@ -309,6 +310,12 @@
       </div>
       <div class="field-row">
         <div class="field">
+          <label for="note">Note (apni marzi se likhein, optional)</label>
+          <input type="text" id="note" placeholder="masalan: 1500 wala PKG, 1000 diya" autocomplete="off">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
           <label for="date">Tareekh</label>
           <input type="date" id="date">
         </div>
@@ -453,6 +460,7 @@
   var totalBaqayaEl = document.getElementById('total-baqaya');
   var fullAmountRow = document.getElementById('full-amount-row');
   var fullAmountInput = document.getElementById('full-amount');
+  var noteInput = document.getElementById('note');
   var amountLabel = document.getElementById('amount-label');
 
   var container = document.getElementById('entries-container');
@@ -603,7 +611,7 @@
         var isJaib = !isW && e.kind === 'jaib';
         var hasDue = isW && e.due > 0;
         html += '<div class="entry' + (isW ? ' wasool' : '') + '" data-id="' + e.id + '" style="animation-delay:' + Math.min(idx*0.04,0.4) + 's">';
-        html += '<div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila (poora Rs' + Math.round(e.fullAmount) + ')</span>' : '') + '</div>';
+        html += '<div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila (poora Rs' + Math.round(e.fullAmount) + ')</span>' : '') + (e.note ? '<span class="note-text">' + escapeHtml(e.note) + '</span>' : '') + '</div>';
         html += '<div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div>';
         html += '<button class="del" data-id="' + e.id + '" aria-label="Delete">&times;</button>';
         html += '</div>';
@@ -648,7 +656,7 @@
       var isW = e.type === 'wasool';
       var isJaib = !isW && e.kind === 'jaib';
       var hasDue = isW && e.due > 0;
-      html += '<div class="entry' + (isW ? ' wasool' : '') + '"><div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila</span>' : '') + '</div><div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div></div>';
+      html += '<div class="entry' + (isW ? ' wasool' : '') + '"><div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila</span>' : '') + (e.note ? '<span class="note-text">' + escapeHtml(e.note) + '</span>' : '') + '</div><div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div></div>';
     });
     recentList.innerHTML = html;
   }
@@ -811,13 +819,14 @@
       if(fullAmount > amount) due = fullAmount - amount;
     }
 
-    var newEntry = { id: Date.now(), amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null, due: due, fullAmount: fullAmount };
+    var newEntry = { id: Date.now(), amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null, due: due, fullAmount: fullAmount, note: noteInput.value.trim() };
     entries.push(newEntry);
     saveEntries(entries);
     cloudSet(newEntry);
 
     amountInput.value = '';
     fullAmountInput.value = '';
+    noteInput.value = '';
     amountInput.focus();
 
     render();
