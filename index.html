@@ -444,8 +444,6 @@
         <div class="capture-date" id="capture-date"></div>
       </div>
       <div id="report-list"></div>
-      <div style="font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); margin:10px 0 -4px;" id="capture-grand-label">Is Mahine Ka Kul:</div>
-      <div class="capture-grand" id="capture-grand"></div>
       <div class="capture-footer" id="capture-footer"></div>
     </div>
   </div>
@@ -963,35 +961,6 @@
       reportList.innerHTML = html;
     }
 
-    var monthPrefix = reportDate.slice(0,7);
-    var monthName = new Date(reportDate + 'T00:00:00').toLocaleDateString('en-GB', {month:'long', year:'numeric'});
-    var grandLabelEl = document.getElementById('capture-grand-label');
-    if(grandLabelEl) grandLabelEl.textContent = monthName + ' Ka Kul:';
-
-    var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
-    dates.forEach(function(date){
-      if(date.slice(0,7) !== monthPrefix) return;
-      byDate[date].forEach(function(e){
-        if(e.type === 'wasool'){ grandWasool += e.amount; }
-        else if(e.kind === 'jaib'){ grandJaib += e.amount; }
-        else { grandDukaan += e.amount; }
-      });
-    });
-
-    var grandBacha = grandWasool - grandDukaan;
-    var netBaqaya = computeTotalBaqaya();
-    var gh = '';
-    gh += '<div class="cg-line"><span>Mahine Ki Wasooli</span><span class="cg-wasool">+' + fmt(grandWasool) + '</span></div>';
-    if(netBaqaya > 0){
-      gh += '<div class="cg-line"><span>Kul Baqaya (kam mila)</span><span style="color:var(--stamp);font-weight:700">Rs' + Math.round(netBaqaya) + '</span></div>';
-    }
-    gh += '<div class="cg-line"><span>Mahine Ka Dukaan Kharcha</span><span class="cg-kharcha">-' + fmt(grandDukaan) + '</span></div>';
-    if(grandJaib > 0){
-      gh += '<div class="cg-line"><span>Mahine Ka Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(grandJaib) + '</span></div>';
-    }
-    gh += '<div class="cg-line cg-bacha"><span>Mahine Ka Bacha</span><span>' + (grandBacha < 0 ? '-' : '') + fmt(grandBacha) + '</span></div>';
-    captureGrand.innerHTML = gh;
-
     var now = new Date();
     captureFooter.textContent = 'Generate hua: ' + now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) + ' • ' + now.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
   }
@@ -1026,26 +995,11 @@
       lines.push('Bacha: ' + fmt(dWasool - dDukaan));
     }
 
-    var monthPrefix = reportDate.slice(0,7);
-    var monthName = new Date(reportDate + 'T00:00:00').toLocaleDateString('en-GB', {month:'long', year:'numeric'});
-    var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
-    dates.forEach(function(date){
-      if(date.slice(0,7) !== monthPrefix) return;
-      byDate[date].forEach(function(e){
-        if(e.type === 'wasool'){ grandWasool += e.amount; }
-        else if(e.kind === 'jaib'){ grandJaib += e.amount; }
-        else { grandDukaan += e.amount; }
-      });
-    });
-
-    lines.push('');
-    lines.push(monthName + ' Ka Kul:');
-    lines.push('Mahine Ki Wasooli: ' + fmt(grandWasool));
     var netBaqayaText = computeTotalBaqaya();
-    if(netBaqayaText > 0) lines.push('Kul Baqaya (kam mila): Rs' + Math.round(netBaqayaText));
-    lines.push('Mahine Ka Dukaan Kharcha: ' + fmt(grandDukaan));
-    if(grandJaib > 0) lines.push('Mahine Ka Jaib Kharcha: ' + fmt(grandJaib));
-    lines.push('Mahine Ka Bacha: ' + fmt(grandWasool - grandDukaan));
+    if(netBaqayaText > 0){
+      lines.push('');
+      lines.push('Kul Baqaya (kam mila): Rs' + Math.round(netBaqayaText));
+    }
     return lines.join('\n');
   }
 
