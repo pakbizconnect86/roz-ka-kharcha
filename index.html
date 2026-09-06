@@ -181,6 +181,18 @@
   .baqaya-id-row .bid-name{ color:var(--ink); font-weight:700; }
   .baqaya-id-row .bid-amt{ color:var(--stamp); font-weight:700; }
 
+  .day-nav{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--card-bg); border:1px solid var(--paper-line-strong); border-radius:6px;
+    padding:8px 6px; margin-bottom:14px;
+  }
+  .day-nav-btn{
+    font-family:'Courier New',monospace; font-size:16px; font-weight:700; color:var(--ink);
+    padding:4px 14px; cursor:pointer; user-select:none;
+  }
+  .day-nav-btn:active{ color:var(--gold); }
+  .day-nav-label{ font-size:15px; font-weight:700; color:var(--ink); }
+
   .view-title{ font-size:17px; font-weight:700; margin:2px 0 14px; }
 
   .recent-preview{ margin-top:4px; }
@@ -402,6 +414,12 @@
       </div>
     </div>
 
+    <div class="day-nav">
+      <span class="day-nav-btn" id="report-prev">◀</span>
+      <span class="day-nav-label" id="report-day-label">Aaj</span>
+      <span class="day-nav-btn" id="report-next">▶</span>
+    </div>
+
     <div class="baqaya-section" id="baqaya-section" style="display:none">
       <div class="view-title" style="font-size:14px; margin-bottom:8px">Kis Kis Ka Baqaya Hai</div>
       <div id="baqaya-id-list"></div>
@@ -413,6 +431,7 @@
         <div class="capture-date" id="capture-date"></div>
       </div>
       <div id="report-list"></div>
+      <div style="font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); margin:10px 0 -4px;">Ab Tak Ka Kul (sab din milakar):</div>
       <div class="capture-grand" id="capture-grand"></div>
     </div>
   </div>
@@ -584,6 +603,23 @@
   var cancelEditLink = document.getElementById('cancel-edit-link');
   var baqayaSection = document.getElementById('baqaya-section');
   var baqayaIdList = document.getElementById('baqaya-id-list');
+  var reportPrevBtn = document.getElementById('report-prev');
+  var reportNextBtn = document.getElementById('report-next');
+  var reportDayLabelEl = document.getElementById('report-day-label');
+  var reportDate = todayISO();
+
+  reportPrevBtn.addEventListener('click', function(){
+    var d = new Date(reportDate + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    reportDate = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    render();
+  });
+  reportNextBtn.addEventListener('click', function(){
+    var d = new Date(reportDate + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    reportDate = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    render();
+  });
 
   var container = document.getElementById('entries-container');
   var recentList = document.getElementById('recent-list');
@@ -854,7 +890,11 @@
   }
 
   function renderReport(byDate, dates){
-    captureDate.textContent = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+    var todayStr = todayISO();
+    var niceDate = new Date(reportDate + 'T00:00:00').toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+    reportDayLabelEl.textContent = dayLabel(reportDate) + ' — ' + niceDate;
+    reportNextBtn.style.visibility = reportDate >= todayStr ? 'hidden' : 'visible';
+    captureDate.textContent = niceDate;
 
     var breakdown = getBaqayaBreakdown();
     if(breakdown.length > 0){
@@ -866,39 +906,41 @@
       baqayaSection.style.display = 'none';
     }
 
-    if(dates.length === 0){
-      reportList.innerHTML = '<div class="report-empty">Report ke liye pehle kuch add karein.</div>';
-      captureGrand.innerHTML = '';
-      return;
-    }
-    var html = '';
-    var grandWasool = 0, grandDukaan = 0, grandJaib = 0, grandDue = 0;
-    dates.forEach(function(date){
-      var list = byDate[date];
+    var dayList = byDate[reportDate] || [];
+    if(dayList.length === 0){
+      reportList.innerHTML = '<div class="report-empty">Is din koi entry nahi.</div>';
+    } else {
       var dWasool = 0, dDukaan = 0, dJaib = 0, dDue = 0;
       var byCat = {};
-      list.forEach(function(e){
+      dayList.forEach(function(e){
         if(e.type === 'wasool'){ dWasool += e.amount; if(e.due > 0) dDue += e.due; }
         else if(e.kind === 'jaib'){ dJaib += e.amount; }
         else { dDukaan += e.amount; byCat[e.category] = (byCat[e.category] || 0) + e.amount; }
       });
-      grandWasool += dWasool; grandDukaan += dDukaan; grandJaib += dJaib; grandDue += dDue;
-      var breakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
+      var catBreakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
       var bacha = dWasool - dDukaan;
-      html += '<div class="report-row">';
-      html += '<div class="r-date">' + dayLabel(date) + '</div>';
+      var html = '<div class="report-row">';
       html += '<div class="r-line"><span>Wasooli</span><span class="r-wasool">+' + fmt(dWasool) + '</span></div>';
       if(dDue > 0){
         html += '<div class="r-line"><span>Baqaya (kam mila)</span><span style="color:var(--stamp);font-weight:700">Rs' + Math.round(dDue) + '</span></div>';
       }
-      html += '<div class="r-line"><span>Dukaan Kharcha' + (breakdown ? ' (' + escapeHtml(breakdown) + ')' : '') + '</span><span class="r-kharcha">-' + fmt(dDukaan) + '</span></div>';
+      html += '<div class="r-line"><span>Dukaan Kharcha' + (catBreakdown ? ' (' + escapeHtml(catBreakdown) + ')' : '') + '</span><span class="r-kharcha">-' + fmt(dDukaan) + '</span></div>';
       if(dJaib > 0){
         html += '<div class="r-line"><span>Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(dJaib) + '</span></div>';
       }
       html += '<div class="r-line r-bacha"><span>Bacha</span><span>' + (bacha < 0 ? '-' : '') + fmt(bacha) + '</span></div>';
       html += '</div>';
+      reportList.innerHTML = html;
+    }
+
+    var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
+    dates.forEach(function(date){
+      byDate[date].forEach(function(e){
+        if(e.type === 'wasool'){ grandWasool += e.amount; }
+        else if(e.kind === 'jaib'){ grandJaib += e.amount; }
+        else { grandDukaan += e.amount; }
+      });
     });
-    reportList.innerHTML = html;
 
     var grandBacha = grandWasool - grandDukaan;
     var netBaqaya = computeTotalBaqaya();
@@ -919,27 +961,38 @@
     var byDate = {};
     entries.forEach(function(e){ if(!byDate[e.date]) byDate[e.date] = []; byDate[e.date].push(e); });
     var dates = Object.keys(byDate).sort(function(a,b){ return b.localeCompare(a); });
-    var lines = ['Roz Ka Kharcha — Report', ''];
-    var grandWasool = 0, grandDukaan = 0, grandJaib = 0, grandDue = 0;
-    dates.forEach(function(date){
-      var list = byDate[date];
-      var dWasool = 0, dDukaan = 0, dJaib = 0, dDue = 0;
-      var byCat = {};
-      list.forEach(function(e){
-        if(e.type === 'wasool'){ dWasool += e.amount; if(e.due > 0) dDue += e.due; }
-        else if(e.kind === 'jaib'){ dJaib += e.amount; }
-        else { dDukaan += e.amount; byCat[e.category] = (byCat[e.category] || 0) + e.amount; }
-      });
-      grandWasool += dWasool; grandDukaan += dDukaan; grandJaib += dJaib; grandDue += dDue;
-      var breakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
-      var line = dayLabel(date) + ': Wasooli ' + fmt(dWasool);
-      if(dDue > 0) line += ' (Baqaya Rs' + Math.round(dDue) + ')';
-      line += ', Dukaan Kharcha ' + fmt(dDukaan) + (breakdown ? ' (' + breakdown + ')' : '');
-      if(dJaib > 0) line += ', Jaib Kharcha ' + fmt(dJaib);
-      line += ', Bacha ' + fmt(dWasool - dDukaan);
-      lines.push(line);
+    var niceDate = new Date(reportDate + 'T00:00:00').toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+    var lines = ['Roz Ka Kharcha — ' + dayLabel(reportDate) + ' (' + niceDate + ')', ''];
+
+    var dayList = byDate[reportDate] || [];
+    var dWasool = 0, dDukaan = 0, dJaib = 0, dDue = 0;
+    var byCat = {};
+    dayList.forEach(function(e){
+      if(e.type === 'wasool'){ dWasool += e.amount; if(e.due > 0) dDue += e.due; }
+      else if(e.kind === 'jaib'){ dJaib += e.amount; }
+      else { dDukaan += e.amount; byCat[e.category] = (byCat[e.category] || 0) + e.amount; }
     });
+    var breakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
+    if(dayList.length === 0){
+      lines.push('Is din koi entry nahi.');
+    } else {
+      lines.push('Wasooli: ' + fmt(dWasool) + (dDue > 0 ? ' (Baqaya Rs' + Math.round(dDue) + ')' : ''));
+      lines.push('Dukaan Kharcha: ' + fmt(dDukaan) + (breakdown ? ' (' + breakdown + ')' : ''));
+      if(dJaib > 0) lines.push('Jaib Kharcha: ' + fmt(dJaib));
+      lines.push('Bacha: ' + fmt(dWasool - dDukaan));
+    }
+
+    var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
+    dates.forEach(function(date){
+      byDate[date].forEach(function(e){
+        if(e.type === 'wasool'){ grandWasool += e.amount; }
+        else if(e.kind === 'jaib'){ grandJaib += e.amount; }
+        else { grandDukaan += e.amount; }
+      });
+    });
+
     lines.push('');
+    lines.push('Ab Tak Ka Kul (sab din milakar):');
     lines.push('Kul Wasooli: ' + fmt(grandWasool));
     var netBaqayaText = computeTotalBaqaya();
     if(netBaqayaText > 0) lines.push('Kul Baqaya (kam mila): Rs' + Math.round(netBaqayaText));
