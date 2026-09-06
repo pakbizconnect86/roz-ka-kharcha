@@ -243,21 +243,32 @@
   }
   #screenshot-btn{ background:var(--ink); }
   .share-btn:active{ transform:scale(0.95); }
-  #report-capture{ background:var(--paper); padding:2px 2px 4px; }
+  #report-capture{
+    background:var(--paper); padding:16px 14px 14px; border:2px solid var(--ink);
+    border-radius:8px; box-shadow:0 3px 10px rgba(32,48,30,0.15); position:relative;
+  }
+  #report-capture::before{
+    content:''; position:absolute; inset:6px; border:1px dashed var(--paper-line-strong);
+    border-radius:5px; pointer-events:none;
+  }
   .capture-head{
     display:flex; justify-content:space-between; align-items:baseline;
-    border-bottom:2px solid var(--paper-line-strong); padding-bottom:8px; margin-bottom:12px;
+    border-bottom:2px solid var(--ink); padding-bottom:10px; margin-bottom:14px;
   }
-  .capture-title{ font-size:17px; font-weight:700; color:var(--ink); }
-  .capture-date{ font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); }
+  .capture-title{ font-size:19px; font-weight:700; color:var(--ink); letter-spacing:0.3px; }
+  .capture-date{ font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); background:var(--card-bg); padding:3px 8px; border-radius:10px; border:1px solid var(--paper-line-strong); }
   .capture-grand{
-    margin-top:10px; padding-top:10px; border-top:2px solid var(--paper-line-strong);
+    margin-top:12px; padding-top:10px; border-top:2px solid var(--ink);
     font-family:'Courier New',monospace; font-size:13px;
   }
   .capture-grand .cg-line{ display:flex; justify-content:space-between; padding:2px 0; }
   .capture-grand .cg-wasool{ color:var(--wasool); font-weight:700; }
   .capture-grand .cg-kharcha{ color:var(--stamp); font-weight:700; }
   .capture-grand .cg-bacha{ color:var(--ink); font-weight:700; font-size:15px; }
+  .capture-footer{
+    margin-top:14px; padding-top:8px; border-top:1px dashed var(--paper-line-strong);
+    font-family:'Courier New',monospace; font-size:9.5px; color:var(--ink-soft); text-align:center;
+  }
   .report-row{
     background:var(--card-bg); border:1px solid var(--paper-line-strong); border-radius:4px;
     padding:9px 10px; margin-bottom:6px; font-family:'Courier New',monospace; font-size:12.5px;
@@ -435,6 +446,7 @@
       <div id="report-list"></div>
       <div style="font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); margin:10px 0 -4px;">Ab Tak Ka Kul (sab din milakar):</div>
       <div class="capture-grand" id="capture-grand"></div>
+      <div class="capture-footer" id="capture-footer"></div>
     </div>
   </div>
 
@@ -631,6 +643,7 @@
   var screenshotBtn = document.getElementById('screenshot-btn');
   var captureDate = document.getElementById('capture-date');
   var captureGrand = document.getElementById('capture-grand');
+  var captureFooter = document.getElementById('capture-footer');
   var toastEl = document.getElementById('toast');
   var todayWasoolEl = document.getElementById('today-wasool');
   var todayKharchaEl = document.getElementById('today-kharcha');
@@ -972,6 +985,9 @@
     }
     gh += '<div class="cg-line cg-bacha"><span>Kul Bacha</span><span>' + (grandBacha < 0 ? '-' : '') + fmt(grandBacha) + '</span></div>';
     captureGrand.innerHTML = gh;
+
+    var now = new Date();
+    captureFooter.textContent = 'Generate hua: ' + now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) + ' • ' + now.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
   }
 
   function buildReportText(){
@@ -1066,8 +1082,10 @@
     var target = document.getElementById('report-capture');
     html2canvas(target, {
       backgroundColor:'#EEF3E7',
-      scale: 2,
-      useCORS: true
+      scale: 3,
+      useCORS: true,
+      windowWidth: target.scrollWidth,
+      windowHeight: target.scrollHeight
     }).then(function(canvas){
       canvas.toBlob(function(blob){
         if(!blob){ showToast('Screenshot nahi ban saka'); return; }
