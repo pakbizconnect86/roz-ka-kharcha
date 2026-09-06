@@ -647,7 +647,7 @@
   var CATS = {
     kharcha_dukaan: ['Petrol','Chai','Khana'],
     kharcha_jaib: ['Petrol','Chai','Khana'],
-    wasool: ['PKG','Router']
+    wasool: ['PKG','Router','Shifting']
   };
 
   function fillCategoryOptions(){
@@ -698,6 +698,13 @@
       idBaqayaNote.style.display = 'block';
     } else {
       idBaqayaNote.style.display = 'none';
+    }
+  });
+
+  categoryInput.addEventListener('change', function(){
+    if(currentType === 'wasool' && categoryInput.value === 'Shifting'){
+      amountInput.value = '0';
+      errorEl.style.display = 'none';
     }
   });
 
@@ -1076,8 +1083,11 @@
     var amount = parseFloat(amountInput.value);
     var category = categoryInput.value;
     var date = dateInput.value || todayISO();
+    var isShifting = currentType === 'wasool' && category === 'Shifting';
 
-    if(!amount || amount <= 0 || isNaN(amount)){
+    if(isShifting){
+      if(isNaN(amount) || amount < 0) amount = 0;
+    } else if(!amount || amount <= 0 || isNaN(amount)){
       errorEl.style.display = 'block';
       return;
     }
