@@ -266,6 +266,8 @@
   .report-row .r-date{ color:var(--ink); font-weight:700; font-family:'Georgia',serif; font-size:14px; margin-bottom:3px; }
   .report-row .r-line{ display:flex; justify-content:space-between; padding:1px 0; }
   .report-row .r-line span:first-child{ color:var(--ink-soft); }
+  .r-wasool-details{ margin:2px 0 4px 8px; padding-left:6px; border-left:2px solid var(--wasool); }
+  .r-wasool-detail{ font-size:11px; color:var(--wasool); padding:1px 0; }
   .report-row .r-wasool{ color:var(--wasool); font-weight:700; }
   .report-row .r-kharcha{ color:var(--stamp); font-weight:700; }
   .report-row .r-bacha{ color:var(--ink); font-weight:700; border-top:1px dashed var(--paper-line-strong); margin-top:3px; padding-top:3px; }
@@ -926,8 +928,16 @@
       });
       var catBreakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
       var bacha = dWasool - dDukaan;
+      var wasoolDetails = dayList.filter(function(e){ return e.type === 'wasool'; }).map(function(e){
+        var idPart = e.customerId ? ' (ID: ' + escapeHtml(e.customerId) + ')' : '';
+        var duePart = e.due > 0 ? ' — Rs' + Math.round(e.due) + ' baqaya' : '';
+        return '<div class="r-wasool-detail">' + escapeHtml(e.category) + idPart + ': Rs' + Math.round(e.amount) + duePart + '</div>';
+      }).join('');
       var html = '<div class="report-row">';
       html += '<div class="r-line"><span>Wasooli</span><span class="r-wasool">+' + fmt(dWasool) + '</span></div>';
+      if(wasoolDetails){
+        html += '<div class="r-wasool-details">' + wasoolDetails + '</div>';
+      }
       if(dDue > 0){
         html += '<div class="r-line"><span>Baqaya (kam mila)</span><span style="color:var(--stamp);font-weight:700">Rs' + Math.round(dDue) + '</span></div>';
       }
@@ -984,6 +994,11 @@
       lines.push('Is din koi entry nahi.');
     } else {
       lines.push('Wasooli: ' + fmt(dWasool) + (dDue > 0 ? ' (Baqaya Rs' + Math.round(dDue) + ')' : ''));
+      dayList.filter(function(e){ return e.type === 'wasool'; }).forEach(function(e){
+        var idPart = e.customerId ? ' (ID: ' + e.customerId + ')' : '';
+        var duePart = e.due > 0 ? ' — Rs' + Math.round(e.due) + ' baqaya' : '';
+        lines.push('  - ' + e.category + idPart + ': Rs' + Math.round(e.amount) + duePart);
+      });
       lines.push('Dukaan Kharcha: ' + fmt(dDukaan) + (breakdown ? ' (' + breakdown + ')' : ''));
       if(dJaib > 0) lines.push('Jaib Kharcha: ' + fmt(dJaib));
       lines.push('Bacha: ' + fmt(dWasool - dDukaan));
