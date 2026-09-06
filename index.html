@@ -193,6 +193,23 @@
   .day-nav-btn:active{ color:var(--gold); }
   .day-nav-label{ font-size:15px; font-weight:700; color:var(--ink); }
 
+  .month-check-bar{ text-align:center; margin-bottom:10px; }
+  .month-check-link{
+    font-family:'Courier New',monospace; font-size:12.5px; color:var(--gold); font-weight:700;
+    cursor:pointer; text-decoration:underline; display:inline-block; padding:4px 8px;
+  }
+  .month-check-link:active{ opacity:0.7; }
+  .month-summary{
+    background:var(--card-bg); border:1.5px solid var(--gold); border-radius:6px;
+    padding:12px; margin-bottom:14px; font-family:'Courier New',monospace; font-size:13px;
+    animation:riseIn .3s ease both;
+  }
+  .month-summary .ms-title{ font-family:'Georgia',serif; font-weight:700; font-size:14px; color:var(--ink); margin-bottom:8px; }
+  .month-summary .ms-line{ display:flex; justify-content:space-between; padding:2px 0; }
+  .month-summary .ms-wasool{ color:var(--wasool); font-weight:700; }
+  .month-summary .ms-kharcha{ color:var(--stamp); font-weight:700; }
+  .month-summary .ms-bacha{ color:var(--ink); font-weight:700; font-size:14px; border-top:1px dashed var(--paper-line-strong); margin-top:4px; padding-top:4px; }
+
   .view-title{ font-size:17px; font-weight:700; margin:2px 0 14px; }
 
   .recent-preview{ margin-top:4px; }
@@ -433,6 +450,11 @@
       <span class="day-nav-btn" id="report-next">▶</span>
     </div>
 
+    <div class="month-check-bar">
+      <span class="month-check-link" id="month-check-link">📅 Is Mahine Ka Hisab Check Karein</span>
+    </div>
+    <div class="month-summary" id="month-summary" style="display:none"></div>
+
     <div class="baqaya-section" id="baqaya-section" style="display:none">
       <div class="view-title" style="font-size:14px; margin-bottom:8px">Kis Kis Ka Baqaya Hai</div>
       <div id="baqaya-id-list"></div>
@@ -618,19 +640,53 @@
   var reportPrevBtn = document.getElementById('report-prev');
   var reportNextBtn = document.getElementById('report-next');
   var reportDayLabelEl = document.getElementById('report-day-label');
+  var monthCheckLink = document.getElementById('month-check-link');
+  var monthSummaryEl = document.getElementById('month-summary');
   var reportDate = todayISO();
 
   reportPrevBtn.addEventListener('click', function(){
     var d = new Date(reportDate + 'T00:00:00');
     d.setDate(d.getDate() - 1);
     reportDate = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    monthSummaryEl.style.display = 'none';
     render();
   });
   reportNextBtn.addEventListener('click', function(){
     var d = new Date(reportDate + 'T00:00:00');
     d.setDate(d.getDate() + 1);
     reportDate = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    monthSummaryEl.style.display = 'none';
     render();
+  });
+
+  monthCheckLink.addEventListener('click', function(){
+    if(monthSummaryEl.style.display === 'block'){
+      monthSummaryEl.style.display = 'none';
+      return;
+    }
+    var monthPrefix = reportDate.slice(0,7);
+    var monthName = new Date(reportDate + 'T00:00:00').toLocaleDateString('en-GB', {month:'long', year:'numeric'});
+    var mWasool = 0, mDukaan = 0, mJaib = 0;
+    entries.forEach(function(e){
+      if(e.date.slice(0,7) !== monthPrefix) return;
+      if(e.type === 'wasool') mWasool += e.amount;
+      else if(e.kind === 'jaib') mJaib += e.amount;
+      else mDukaan += e.amount;
+    });
+    var mBacha = mWasool - mDukaan;
+    var netBaqaya = computeTotalBaqaya();
+    var html = '<div class="ms-title">' + monthName + ' Ka Hisab</div>';
+    html += '<div class="ms-line"><span>Wasooli</span><span class="ms-wasool">+' + fmt(mWasool) + '</span></div>';
+    if(netBaqaya > 0){
+      html += '<div class="ms-line"><span>Baqaya (kam mila)</span><span style="color:var(--stamp);font-weight:700">Rs' + Math.round(netBaqaya) + '</span></div>';
+    }
+    html += '<div class="ms-line"><span>Dukaan Kharcha</span><span class="ms-kharcha">-' + fmt(mDukaan) + '</span></div>';
+    if(mJaib > 0){
+      html += '<div class="ms-line"><span>Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(mJaib) + '</span></div>';
+    }
+    html += '<div class="ms-line ms-bacha"><span>Bacha</span><span>' + (mBacha < 0 ? '-' : '') + fmt(mBacha) + '</span></div>';
+    monthSummaryEl.innerHTML = html;
+    monthSummaryEl.style.display = 'block';
   });
 
   var container = document.getElementById('entries-container');
