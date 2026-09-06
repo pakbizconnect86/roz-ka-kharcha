@@ -444,7 +444,7 @@
         <div class="capture-date" id="capture-date"></div>
       </div>
       <div id="report-list"></div>
-      <div style="font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); margin:10px 0 -4px;">Ab Tak Ka Kul (sab din milakar):</div>
+      <div style="font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); margin:10px 0 -4px;" id="capture-grand-label">Is Mahine Ka Kul:</div>
       <div class="capture-grand" id="capture-grand"></div>
       <div class="capture-footer" id="capture-footer"></div>
     </div>
@@ -963,8 +963,14 @@
       reportList.innerHTML = html;
     }
 
+    var monthPrefix = reportDate.slice(0,7);
+    var monthName = new Date(reportDate + 'T00:00:00').toLocaleDateString('en-GB', {month:'long', year:'numeric'});
+    var grandLabelEl = document.getElementById('capture-grand-label');
+    if(grandLabelEl) grandLabelEl.textContent = monthName + ' Ka Kul:';
+
     var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
     dates.forEach(function(date){
+      if(date.slice(0,7) !== monthPrefix) return;
       byDate[date].forEach(function(e){
         if(e.type === 'wasool'){ grandWasool += e.amount; }
         else if(e.kind === 'jaib'){ grandJaib += e.amount; }
@@ -975,15 +981,15 @@
     var grandBacha = grandWasool - grandDukaan;
     var netBaqaya = computeTotalBaqaya();
     var gh = '';
-    gh += '<div class="cg-line"><span>Kul Wasooli</span><span class="cg-wasool">+' + fmt(grandWasool) + '</span></div>';
+    gh += '<div class="cg-line"><span>Mahine Ki Wasooli</span><span class="cg-wasool">+' + fmt(grandWasool) + '</span></div>';
     if(netBaqaya > 0){
       gh += '<div class="cg-line"><span>Kul Baqaya (kam mila)</span><span style="color:var(--stamp);font-weight:700">Rs' + Math.round(netBaqaya) + '</span></div>';
     }
-    gh += '<div class="cg-line"><span>Kul Dukaan Kharcha</span><span class="cg-kharcha">-' + fmt(grandDukaan) + '</span></div>';
+    gh += '<div class="cg-line"><span>Mahine Ka Dukaan Kharcha</span><span class="cg-kharcha">-' + fmt(grandDukaan) + '</span></div>';
     if(grandJaib > 0){
-      gh += '<div class="cg-line"><span>Kul Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(grandJaib) + '</span></div>';
+      gh += '<div class="cg-line"><span>Mahine Ka Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(grandJaib) + '</span></div>';
     }
-    gh += '<div class="cg-line cg-bacha"><span>Kul Bacha</span><span>' + (grandBacha < 0 ? '-' : '') + fmt(grandBacha) + '</span></div>';
+    gh += '<div class="cg-line cg-bacha"><span>Mahine Ka Bacha</span><span>' + (grandBacha < 0 ? '-' : '') + fmt(grandBacha) + '</span></div>';
     captureGrand.innerHTML = gh;
 
     var now = new Date();
@@ -1020,8 +1026,11 @@
       lines.push('Bacha: ' + fmt(dWasool - dDukaan));
     }
 
+    var monthPrefix = reportDate.slice(0,7);
+    var monthName = new Date(reportDate + 'T00:00:00').toLocaleDateString('en-GB', {month:'long', year:'numeric'});
     var grandWasool = 0, grandDukaan = 0, grandJaib = 0;
     dates.forEach(function(date){
+      if(date.slice(0,7) !== monthPrefix) return;
       byDate[date].forEach(function(e){
         if(e.type === 'wasool'){ grandWasool += e.amount; }
         else if(e.kind === 'jaib'){ grandJaib += e.amount; }
@@ -1030,13 +1039,13 @@
     });
 
     lines.push('');
-    lines.push('Ab Tak Ka Kul (sab din milakar):');
-    lines.push('Kul Wasooli: ' + fmt(grandWasool));
+    lines.push(monthName + ' Ka Kul:');
+    lines.push('Mahine Ki Wasooli: ' + fmt(grandWasool));
     var netBaqayaText = computeTotalBaqaya();
     if(netBaqayaText > 0) lines.push('Kul Baqaya (kam mila): Rs' + Math.round(netBaqayaText));
-    lines.push('Kul Dukaan Kharcha: ' + fmt(grandDukaan));
-    if(grandJaib > 0) lines.push('Kul Jaib Kharcha: ' + fmt(grandJaib));
-    lines.push('Kul Bacha: ' + fmt(grandWasool - grandDukaan));
+    lines.push('Mahine Ka Dukaan Kharcha: ' + fmt(grandDukaan));
+    if(grandJaib > 0) lines.push('Mahine Ka Jaib Kharcha: ' + fmt(grandJaib));
+    lines.push('Mahine Ka Bacha: ' + fmt(grandWasool - grandDukaan));
     return lines.join('\n');
   }
 
