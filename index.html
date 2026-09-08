@@ -998,7 +998,8 @@
       var wasoolDetails = dayList.filter(function(e){ return e.type === 'wasool'; }).map(function(e){
         var idPart = e.customerId ? ' (ID: ' + escapeHtml(e.customerId) + ')' : '';
         var duePart = e.due > 0 ? ' — Rs' + Math.round(e.due) + ' baqaya' : '';
-        return '<div class="r-wasool-detail">' + escapeHtml(e.category) + idPart + ': Rs' + Math.round(e.amount) + duePart + '</div>';
+        var notePart = e.note ? ' [' + escapeHtml(e.note) + ']' : '';
+        return '<div class="r-wasool-detail">' + escapeHtml(e.category) + idPart + ': Rs' + Math.round(e.amount) + duePart + notePart + '</div>';
       }).join('');
       var html = '<div class="report-row">';
       html += '<div class="r-line"><span>Wasooli</span><span class="r-wasool">+' + fmt(dWasool) + '</span></div>';
@@ -1009,6 +1010,12 @@
         html += '<div class="r-line"><span>Baqaya (kam mila)</span><span style="color:var(--stamp);font-weight:700">Rs' + Math.round(dDue) + '</span></div>';
       }
       html += '<div class="r-line"><span>Dukaan Kharcha' + (catBreakdown ? ' (' + escapeHtml(catBreakdown) + ')' : '') + '</span><span class="r-kharcha">-' + fmt(dDukaan) + '</span></div>';
+      var kharchaNotes = dayList.filter(function(e){ return e.type !== 'wasool' && e.note; }).map(function(e){
+        return '<div class="r-wasool-detail" style="color:var(--stamp)">' + escapeHtml(e.category) + (e.kind === 'jaib' ? ' (Jaib)' : '') + ': Rs' + Math.round(e.amount) + ' [' + escapeHtml(e.note) + ']</div>';
+      }).join('');
+      if(kharchaNotes){
+        html += '<div class="r-wasool-details">' + kharchaNotes + '</div>';
+      }
       if(dJaib > 0){
         html += '<div class="r-line"><span>Jaib Kharcha</span><span style="color:var(--gold);font-weight:700">-' + fmt(dJaib) + '</span></div>';
       }
@@ -1044,9 +1051,13 @@
       dayList.filter(function(e){ return e.type === 'wasool'; }).forEach(function(e){
         var idPart = e.customerId ? ' (ID: ' + e.customerId + ')' : '';
         var duePart = e.due > 0 ? ' — Rs' + Math.round(e.due) + ' baqaya' : '';
-        lines.push('  - ' + e.category + idPart + ': Rs' + Math.round(e.amount) + duePart);
+        var notePart = e.note ? ' [' + e.note + ']' : '';
+        lines.push('  - ' + e.category + idPart + ': Rs' + Math.round(e.amount) + duePart + notePart);
       });
       lines.push('Dukaan Kharcha: ' + fmt(dDukaan) + (breakdown ? ' (' + breakdown + ')' : ''));
+      dayList.filter(function(e){ return e.type !== 'wasool' && e.note; }).forEach(function(e){
+        lines.push('  - ' + e.category + (e.kind === 'jaib' ? ' (Jaib)' : '') + ': Rs' + Math.round(e.amount) + ' [' + e.note + ']');
+      });
       if(dJaib > 0) lines.push('Jaib Kharcha: ' + fmt(dJaib));
       lines.push('Bacha: ' + fmt(dWasool - dDukaan));
     }
