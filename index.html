@@ -716,7 +716,7 @@
   var CATS = {
     kharcha_dukaan: ['Petrol','Chai','Khana'],
     kharcha_jaib: ['Petrol','Chai','Khana'],
-    wasool: ['PKG','Router','Shifting']
+    wasool: ['PKG','Pending','Router','Shifting']
   };
 
   function fillCategoryOptions(){
@@ -771,7 +771,7 @@
   });
 
   categoryInput.addEventListener('change', function(){
-    if(currentType === 'wasool' && categoryInput.value === 'Shifting'){
+    if(currentType === 'wasool' && (categoryInput.value === 'Shifting' || categoryInput.value === 'Pending')){
       amountInput.value = '0';
       errorEl.style.display = 'none';
     }
@@ -1146,9 +1146,9 @@
     var amount = parseFloat(amountInput.value);
     var category = categoryInput.value;
     var date = dateInput.value || todayISO();
-    var isShifting = currentType === 'wasool' && category === 'Shifting';
+    var isZeroAllowed = currentType === 'wasool' && (category === 'Shifting' || category === 'Pending');
 
-    if(isShifting){
+    if(isZeroAllowed){
       if(isNaN(amount) || amount < 0) amount = 0;
     } else if(!amount || amount <= 0 || isNaN(amount)){
       errorEl.style.display = 'block';
