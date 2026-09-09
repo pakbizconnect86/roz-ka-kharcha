@@ -78,6 +78,7 @@
   .menu-item .ic{ font-family:'Courier New',monospace; font-size:15px; width:18px; text-align:center; }
   .menu-item:active{ background:rgba(0,0,0,0.04); }
   .menu-item.active{ background:var(--stamp-soft); border-left-color:var(--stamp); font-weight:700; }
+  .menu-divider{ height:1px; background:var(--paper-line-strong); margin:10px 18px; }
 
   main{ position:relative; z-index:1; padding:16px 16px 0 48px; max-width:520px; margin:0 auto; }
 
@@ -176,10 +177,17 @@
   .baqaya-id-row{
     display:flex; justify-content:space-between; align-items:center;
     background:rgba(178,58,46,0.07); border:1px solid var(--stamp); border-radius:4px;
-    padding:8px 10px; margin-bottom:6px; font-family:'Courier New',monospace; font-size:13px;
+    padding:8px 10px; margin-bottom:2px; font-family:'Courier New',monospace; font-size:13px;
+    cursor:pointer;
   }
+  .baqaya-id-row:active{ opacity:0.8; }
   .baqaya-id-row .bid-name{ color:var(--ink); font-weight:700; }
   .baqaya-id-row .bid-amt{ color:var(--stamp); font-weight:700; }
+  .id-history{
+    background:var(--card-bg); border:1px dashed var(--stamp); border-top:none;
+    border-radius:0 0 4px 4px; padding:6px 10px; margin:-4px 0 6px;
+  }
+  .id-history-row{ font-family:'Courier New',monospace; font-size:11px; color:var(--ink-soft); padding:2px 0; }
 
   .day-nav{
     display:flex; align-items:center; justify-content:space-between;
@@ -211,6 +219,15 @@
   .month-summary .ms-bacha{ color:var(--ink); font-weight:700; font-size:14px; border-top:1px dashed var(--paper-line-strong); margin-top:4px; padding-top:4px; }
 
   .view-title{ font-size:17px; font-weight:700; margin:2px 0 14px; }
+
+  .list-filter{ display:flex; gap:6px; margin:-6px 0 14px; flex-wrap:wrap; }
+  .filter-chip{
+    font-family:'Courier New',monospace; font-size:12px; padding:6px 12px; border-radius:14px;
+    background:var(--card-bg); border:1px solid var(--paper-line-strong); color:var(--ink-soft);
+    cursor:pointer; transition:all .12s ease;
+  }
+  .filter-chip.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .filter-chip:active{ transform:scale(0.94); }
 
   .recent-preview{ margin-top:4px; }
   .recent-header{ display:flex; justify-content:space-between; align-items:center; font-size:13px; color:var(--ink-soft); font-family:'Courier New',monospace; margin-bottom:8px; }
@@ -335,6 +352,10 @@
   <div class="menu-item active" data-view="add"><span class="ic">+</span> Add Karein</div>
   <div class="menu-item" data-view="list"><span class="ic">≡</span> Kya Kya Hua</div>
   <div class="menu-item" data-view="report"><span class="ic">▤</span> Report</div>
+  <div class="menu-divider"></div>
+  <div class="menu-item" id="backup-export-btn"><span class="ic">⬇</span> Backup Lein</div>
+  <div class="menu-item" id="backup-import-btn"><span class="ic">⬆</span> Backup Restore Karein</div>
+  <input type="file" id="backup-file-input" accept="application/json" style="display:none">
 </nav>
 
 <header>
@@ -432,6 +453,12 @@
 
   <div class="view" id="view-list">
     <div class="view-title">Kya Kya Hua</div>
+    <div class="list-filter" id="list-filter">
+      <span class="filter-chip active" data-filter="all">Sab</span>
+      <span class="filter-chip" data-filter="wasool">Wasooli</span>
+      <span class="filter-chip" data-filter="dukaan">Dukaan</span>
+      <span class="filter-chip" data-filter="jaib">Jaib</span>
+    </div>
     <div id="entries-container"></div>
   </div>
 
@@ -711,6 +738,16 @@
   var views = document.querySelectorAll('.view');
 
   var editingId = null;
+  var listFilter = 'all';
+  var listFilterBar = document.getElementById('list-filter');
+  var filterChips = document.querySelectorAll('.filter-chip');
+  filterChips.forEach(function(chip){
+    chip.addEventListener('click', function(){
+      listFilter = chip.getAttribute('data-filter');
+      filterChips.forEach(function(c){ c.classList.toggle('active', c === chip); });
+      render();
+    });
+  });
   var currentType = 'kharcha';
   var currentKind = 'dukaan';
   var CATS = {
@@ -831,6 +868,59 @@
   });
   viewListLink.addEventListener('click', function(){ showView('list'); });
 
+  var backupExportBtn = document.getElementById('backup-export-btn');
+  var backupImportBtn = document.getElementById('backup-import-btn');
+  var backupFileInput = document.getElementById('backup-file-input');
+
+  backupExportBtn.addEventListener('click', function(){
+    if(entries.length === 0){ showToast('Koi data nahi hai backup ke liye'); closeMenu(); return; }
+    var blob = new Blob([JSON.stringify(entries, null, 2)], { type:'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'roz-ka-kharcha-backup-' + todayISO() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+    closeMenu();
+    showToast('Backup file save ho gayi');
+  });
+
+  backupImportBtn.addEventListener('click', function(){
+    closeMenu();
+    backupFileInput.click();
+  });
+
+  backupFileInput.addEventListener('change', function(){
+    var file = backupFileInput.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var imported = JSON.parse(reader.result);
+        if(!Array.isArray(imported)) throw new Error('bad format');
+        var existingIds = {};
+        entries.forEach(function(e){ existingIds[e.id] = true; });
+        var added = 0;
+        imported.forEach(function(e){
+          if(e && e.id && !existingIds[e.id]){
+            entries.push(e);
+            cloudSet(e);
+            added++;
+          }
+        });
+        saveEntries(entries);
+        render();
+        showToast(added + ' entries restore ho gayi');
+      }catch(err){
+        showToast('Backup file sahi nahi hai');
+      }
+      backupFileInput.value = '';
+    };
+    reader.readAsText(file);
+  });
+
   var entries = loadEntries();
 
   if(cloudReady){
@@ -892,9 +982,17 @@
         else if(e.kind === 'jaib') dJaib += e.amount;
         else dDukaan += e.amount;
       });
+      var filteredList = list.filter(function(e){
+        if(listFilter === 'all') return true;
+        if(listFilter === 'wasool') return e.type === 'wasool';
+        if(listFilter === 'dukaan') return e.type !== 'wasool' && e.kind !== 'jaib';
+        if(listFilter === 'jaib') return e.type !== 'wasool' && e.kind === 'jaib';
+        return true;
+      });
+      if(filteredList.length === 0) return;
       html += '<div class="day-group">';
       html += '<div class="day-header"><span class="day-title">' + dayLabel(date) + '</span><span class="day-total"><span class="plus">+' + fmt(dWasool) + '</span> / <span class="minus">-' + fmt(dDukaan) + '</span>' + (dJaib > 0 ? ' <span style="color:var(--gold)">(Jaib -' + fmt(dJaib) + ')</span>' : '') + '</span></div>';
-      list.forEach(function(e, idx){
+      filteredList.forEach(function(e, idx){
         var isW = e.type === 'wasool';
         var isJaib = !isW && e.kind === 'jaib';
         var hasDue = isW && e.due > 0;
@@ -906,6 +1004,9 @@
       });
       html += '</div>';
     });
+    if(!html){
+      html = '<div class="empty"><div class="big">Is filter mein koi entry nahi</div>Doosra filter try karein.</div>';
+    }
     container.innerHTML = html;
 
     Array.prototype.forEach.call(container.querySelectorAll('.del'), function(btn){
@@ -976,8 +1077,27 @@
     if(breakdown.length > 0){
       baqayaSection.style.display = 'block';
       baqayaIdList.innerHTML = breakdown.map(function(b){
-        return '<div class="baqaya-id-row"><span class="bid-name">' + escapeHtml(b.id) + '</span><span class="bid-amt">Rs' + Math.round(b.net) + '</span></div>';
+        return '<div class="baqaya-id-row" data-id="' + escapeHtml(b.id) + '"><span class="bid-name">' + escapeHtml(b.id) + '</span><span class="bid-amt">Rs' + Math.round(b.net) + '</span></div><div class="id-history" data-id-history="' + escapeHtml(b.id) + '" style="display:none"></div>';
       }).join('');
+      Array.prototype.forEach.call(baqayaIdList.querySelectorAll('.baqaya-id-row'), function(row){
+        row.addEventListener('click', function(){
+          var id = row.getAttribute('data-id');
+          var histEl = baqayaIdList.querySelector('.id-history[data-id-history="' + CSS.escape(id) + '"]');
+          if(!histEl) return;
+          if(histEl.style.display === 'block'){ histEl.style.display = 'none'; return; }
+          Array.prototype.forEach.call(baqayaIdList.querySelectorAll('.id-history'), function(h){ h.style.display = 'none'; });
+          var norm = id.trim().toLowerCase();
+          var hist = entries.filter(function(e){ return e.type === 'wasool' && e.customerId && String(e.customerId).trim().toLowerCase() === norm; })
+            .sort(function(a,b){ return b.id - a.id; });
+          var hh = hist.map(function(e){
+            var niceD = new Date(e.date + 'T00:00:00').toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+            var duePart = e.due > 0 ? ' (Rs' + Math.round(e.due) + ' baqaya)' : '';
+            return '<div class="id-history-row">' + niceD + ' — ' + escapeHtml(e.category) + ': Rs' + Math.round(e.amount) + duePart + '</div>';
+          }).join('');
+          histEl.innerHTML = hh;
+          histEl.style.display = 'block';
+        });
+      });
     } else {
       baqayaSection.style.display = 'none';
     }
