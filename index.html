@@ -125,6 +125,10 @@
     background:var(--card-bg); color:var(--ink-soft); transition:all .15s ease;
   }
   .kind-btn{ padding:8px; font-size:12.5px; }
+  .pm-toggle{ margin-bottom:0; }
+  .pm-btn{ padding:8px; font-size:12.5px; }
+  .pm-btn.active[data-pm="Cash"]{ background:var(--wasool); border-color:var(--wasool); color:#fff; }
+  .pm-btn.active[data-pm="Easypaisa"]{ background:#2E7DB8; border-color:#2E7DB8; color:#fff; }
   .type-btn.active[data-type="kharcha"]{ background:var(--stamp); border-color:var(--stamp); color:#fff; }
   .type-btn.active[data-type="wasool"]{ background:var(--wasool); border-color:var(--wasool); color:#fff; }
   .kind-btn.active[data-kind="dukaan"]{ background:var(--stamp); border-color:var(--stamp); color:#fff; }
@@ -420,6 +424,15 @@
           <div class="id-baqaya-note" id="id-baqaya-note" style="display:none"></div>
         </div>
       </div>
+      <div class="field-row" id="payment-method-row" style="display:none">
+        <div class="field">
+          <label>Payment Method</label>
+          <div class="type-toggle pm-toggle">
+            <div class="type-btn pm-btn active" data-pm="Cash" id="btn-pm-cash">Cash</div>
+            <div class="type-btn pm-btn" data-pm="Easypaisa" id="btn-pm-easypaisa">Easypaisa</div>
+          </div>
+        </div>
+      </div>
       <div class="field-row" id="full-amount-row" style="display:none">
         <div class="field">
           <label for="full-amount">Poora Rate (agar kam mila ho)</label>
@@ -658,6 +671,10 @@
   var customerIdRow = document.getElementById('customer-id-row');
   var customerIdInput = document.getElementById('customer-id');
   var idBaqayaNote = document.getElementById('id-baqaya-note');
+  var paymentMethodRow = document.getElementById('payment-method-row');
+  var btnPmCash = document.getElementById('btn-pm-cash');
+  var btnPmEasypaisa = document.getElementById('btn-pm-easypaisa');
+  var currentPm = 'Cash';
   var amountLabel = document.getElementById('amount-label');
   var quickChips = document.getElementById('quick-chips');
   var editBar = document.getElementById('edit-bar');
@@ -770,6 +787,14 @@
     submitBtn.textContent = kind === 'jaib' ? '+ Jaib Kharcha Add Karein' : '+ Dukaan Kharcha Add Karein';
   }
 
+  function setPm(pm){
+    currentPm = pm;
+    btnPmCash.classList.toggle('active', pm === 'Cash');
+    btnPmEasypaisa.classList.toggle('active', pm === 'Easypaisa');
+  }
+  btnPmCash.addEventListener('click', function(){ setPm('Cash'); });
+  btnPmEasypaisa.addEventListener('click', function(){ setPm('Easypaisa'); });
+
   function setType(type){
     currentType = type;
     btnTypeKharcha.classList.toggle('active', type === 'kharcha');
@@ -777,6 +802,7 @@
     kindToggle.style.display = type === 'kharcha' ? 'flex' : 'none';
     fullAmountRow.style.display = type === 'wasool' ? 'flex' : 'none';
     customerIdRow.style.display = type === 'wasool' ? 'flex' : 'none';
+    paymentMethodRow.style.display = type === 'wasool' ? 'flex' : 'none';
     amountLabel.textContent = type === 'wasool' ? 'Kitna Mila (Rs)' : 'Amount (Rs)';
     fillCategoryOptions();
     if(type === 'wasool'){
@@ -787,6 +813,7 @@
       fullAmountInput.value = '';
       customerIdInput.value = '';
       idBaqayaNote.style.display = 'none';
+      setPm('Cash');
       submitBtn.textContent = currentKind === 'jaib' ? '+ Jaib Kharcha Add Karein' : '+ Dukaan Kharcha Add Karein';
       submitBtn.classList.remove('mode-wasool');
       submitBtn.classList.add('mode-kharcha');
@@ -846,6 +873,7 @@
     if(entry.type === 'wasool'){
       fullAmountInput.value = entry.fullAmount || '';
       customerIdInput.value = entry.customerId || '';
+      setPm(entry.paymentMethod || 'Cash');
     }
     editBar.style.display = 'flex';
     submitBtn.textContent = 'Update Karein';
@@ -997,7 +1025,7 @@
         var isJaib = !isW && e.kind === 'jaib';
         var hasDue = isW && e.due > 0;
         html += '<div class="entry' + (isW ? ' wasool' : '') + '" data-id="' + e.id + '" style="animation-delay:' + Math.min(idx*0.04,0.4) + 's">';
-        html += '<div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + (e.customerId ? ' <span class="cat">ID: ' + escapeHtml(e.customerId) + '</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila (poora Rs' + Math.round(e.fullAmount) + ')</span>' : '') + (e.note ? '<span class="note-text">' + escapeHtml(e.note) + '</span>' : '') + '</div>';
+        html += '<div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + (e.customerId ? ' <span class="cat">ID: ' + escapeHtml(e.customerId) + '</span>' : '') + (isW && e.paymentMethod ? ' <span class="cat">' + escapeHtml(e.paymentMethod) + '</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila (poora Rs' + Math.round(e.fullAmount) + ')</span>' : '') + (e.note ? '<span class="note-text">' + escapeHtml(e.note) + '</span>' : '') + '</div>';
         html += '<div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div>';
         html += '<button class="del" data-id="' + e.id + '" aria-label="Delete">&times;</button>';
         html += '</div>';
@@ -1061,7 +1089,7 @@
       var isW = e.type === 'wasool';
       var isJaib = !isW && e.kind === 'jaib';
       var hasDue = isW && e.due > 0;
-      html += '<div class="entry' + (isW ? ' wasool' : '') + '"><div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + (e.customerId ? ' <span class="cat">ID: ' + escapeHtml(e.customerId) + '</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila</span>' : '') + (e.note ? '<span class="note-text">' + escapeHtml(e.note) + '</span>' : '') + '</div><div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div></div>';
+      html += '<div class="entry' + (isW ? ' wasool' : '') + '"><div class="info"><div class="item-name">' + escapeHtml(e.category) + (isJaib ? ' <span class="cat">Jaib</span>' : '') + (e.customerId ? ' <span class="cat">ID: ' + escapeHtml(e.customerId) + '</span>' : '') + (isW && e.paymentMethod ? ' <span class="cat">' + escapeHtml(e.paymentMethod) + '</span>' : '') + '</div>' + (hasDue ? '<span class="due-note">Rs' + Math.round(e.due) + ' kam mila</span>' : '') + (e.note ? '<span class="note-text">' + escapeHtml(e.note) + '</span>' : '') + '</div><div class="amt">' + (isW ? '+' : '-') + fmt(e.amount) + '</div></div>';
     });
     recentList.innerHTML = html;
   }
@@ -1115,14 +1143,23 @@
       });
       var catBreakdown = Object.keys(byCat).map(function(c){ return c + ' Rs' + Math.round(byCat[c]); }).join(', ');
       var bacha = dWasool - dDukaan;
+      var byPm = {};
+      dayList.forEach(function(e){
+        if(e.type === 'wasool'){
+          var pm = e.paymentMethod || 'Cash';
+          byPm[pm] = (byPm[pm] || 0) + e.amount;
+        }
+      });
+      var pmBreakdown = Object.keys(byPm).map(function(p){ return p + ' Rs' + Math.round(byPm[p]); }).join(', ');
       var wasoolDetails = dayList.filter(function(e){ return e.type === 'wasool'; }).map(function(e){
         var idPart = e.customerId ? ' (ID: ' + escapeHtml(e.customerId) + ')' : '';
         var duePart = e.due > 0 ? ' — Rs' + Math.round(e.due) + ' baqaya' : '';
         var notePart = e.note ? ' [' + escapeHtml(e.note) + ']' : '';
-        return '<div class="r-wasool-detail">' + escapeHtml(e.category) + idPart + ': Rs' + Math.round(e.amount) + duePart + notePart + '</div>';
+        var pmTag = ' <span class="cat">' + escapeHtml(e.paymentMethod || 'Cash') + '</span>';
+        return '<div class="r-wasool-detail">' + escapeHtml(e.category) + idPart + pmTag + ': Rs' + Math.round(e.amount) + duePart + notePart + '</div>';
       }).join('');
       var html = '<div class="report-row">';
-      html += '<div class="r-line"><span>Wasooli</span><span class="r-wasool">+' + fmt(dWasool) + '</span></div>';
+      html += '<div class="r-line"><span>Wasooli' + (pmBreakdown ? ' (' + escapeHtml(pmBreakdown) + ')' : '') + '</span><span class="r-wasool">+' + fmt(dWasool) + '</span></div>';
       if(wasoolDetails){
         html += '<div class="r-wasool-details">' + wasoolDetails + '</div>';
       }
@@ -1167,12 +1204,20 @@
     if(dayList.length === 0){
       lines.push('Is din koi entry nahi.');
     } else {
-      lines.push('Wasooli: ' + fmt(dWasool) + (dDue > 0 ? ' (Baqaya Rs' + Math.round(dDue) + ')' : ''));
+      var byPmText = {};
+      dayList.forEach(function(e){
+        if(e.type === 'wasool'){
+          var pm = e.paymentMethod || 'Cash';
+          byPmText[pm] = (byPmText[pm] || 0) + e.amount;
+        }
+      });
+      var pmBreakdownText = Object.keys(byPmText).map(function(p){ return p + ' Rs' + Math.round(byPmText[p]); }).join(', ');
+      lines.push('Wasooli: ' + fmt(dWasool) + (pmBreakdownText ? ' (' + pmBreakdownText + ')' : '') + (dDue > 0 ? ' (Baqaya Rs' + Math.round(dDue) + ')' : ''));
       dayList.filter(function(e){ return e.type === 'wasool'; }).forEach(function(e){
         var idPart = e.customerId ? ' (ID: ' + e.customerId + ')' : '';
         var duePart = e.due > 0 ? ' — Rs' + Math.round(e.due) + ' baqaya' : '';
         var notePart = e.note ? ' [' + e.note + ']' : '';
-        lines.push('  - ' + e.category + idPart + ': Rs' + Math.round(e.amount) + duePart + notePart);
+        lines.push('  - ' + e.category + idPart + ' [' + (e.paymentMethod || 'Cash') + ']: Rs' + Math.round(e.amount) + duePart + notePart);
       });
       lines.push('Dukaan Kharcha: ' + fmt(dDukaan) + (breakdown ? ' (' + breakdown + ')' : ''));
       dayList.filter(function(e){ return e.type !== 'wasool' && e.note; }).forEach(function(e){
@@ -1286,7 +1331,7 @@
       var idx = -1;
       for(var i=0;i<entries.length;i++){ if(entries[i].id === editingId){ idx = i; break; } }
       if(idx > -1){
-        var updated = { id: editingId, amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null, due: due, fullAmount: fullAmount, note: noteInput.value.trim(), customerId: currentType === 'wasool' ? customerIdInput.value.trim() : '' };
+        var updated = { id: editingId, amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null, due: due, fullAmount: fullAmount, note: noteInput.value.trim(), customerId: currentType === 'wasool' ? customerIdInput.value.trim() : '', paymentMethod: currentType === 'wasool' ? currentPm : '' };
         entries[idx] = updated;
         saveEntries(entries);
         cloudSet(updated);
@@ -1297,7 +1342,7 @@
       return;
     }
 
-    var newEntry = { id: Date.now(), amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null, due: due, fullAmount: fullAmount, note: noteInput.value.trim(), customerId: currentType === 'wasool' ? customerIdInput.value.trim() : '' };
+    var newEntry = { id: Date.now(), amount: amount, category: category, date: date, type: currentType, kind: currentType === 'kharcha' ? currentKind : null, due: due, fullAmount: fullAmount, note: noteInput.value.trim(), customerId: currentType === 'wasool' ? customerIdInput.value.trim() : '', paymentMethod: currentType === 'wasool' ? currentPm : '' };
     entries.push(newEntry);
     saveEntries(entries);
     cloudSet(newEntry);
